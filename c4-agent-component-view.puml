@@ -3,26 +3,37 @@
 
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
-skinparam wrapWidth 300
 
 title
-<b>Agent Service (Go): Component Diagram</b>
-<i>Основные компоненты локального агента</i>
+  <b>GophKeeper v2025.08.07</b>
+  <i>Компонентная диаграмма: Agent Core (CLI)</i>
 end title
 
-Container_Boundary(agent_service, "Агент (Go-приложение)"){
-    Component(agent_http_api, "HTTP API", "net/http", "Принимает команды от локального UI по HTTPS")
-    Component(command_handler, "Command Handler", "Go", "Обрабатывает команды: CRUD, синхронизация, логин")
-    Component(local_storage, "Local Storage", "Встроенное хранилище", "Хранит ключи, токены, временные данные")
-    Component(grpc_client, "gRPC Client", "gRPC", "Общается с удалённым сервером по защищённому каналу")
-    Component(session_manager, "Session Manager", "Go", "Управляет сессиями, авторизацией, токенами")
-    Component(sync_scheduler, "Sync Scheduler", "Go", "Запускает синхронизацию вручную или по расписанию")
+Container_Boundary(agent_core, "Agent Core", "Go", "Обрабатывает команды и координирует логику приложения") {
 
-    Rel(agent_http_api, command_handler, "Передаёт команды из UI")
-    Rel(command_handler, grpc_client, "Отправляет команды и данные на сервер")
-    Rel(command_handler, local_storage, "Чтение/запись временных данных")
-    Rel(command_handler, session_manager, "Авторизация, проверка токенов")
-    Rel(sync_scheduler, command_handler, "Инициирует синхронизацию")
+Component(dispatcher, "Command Core", "Go", "Обрабатывает команды от CLI-интерфейса и направляет их соответствующим компонентам")
+Component(session, "Session Manager", "Go", "Управляет токенами (access/refresh), сохраняет и обновляет их")
+Component(sync, "gRPC Client", "Go + gRPC", "Связывается с сервером для аутентификации пользователя, синхронизации данных, использует access-токен")
+Component(vault, "Vault Service", "Go", "Работает с метаданными и зашифрованными данными")
+Component(crypto, "Crypto Engine", "Go", "Шифрует/дешифрует данные с использованием мастер-ключа")
 }
+
+' CLI и хранилище — внешние по отношению к ядру
+Container_Ext(cli, "CLI", "", "Интерфейс командной строки")
+ContainerDb(localstore, "Local Storage", "ФС / SQLite", "Хранение токенов, данных и метаданных")
+
+' Взаимодействия
+Rel_L(cli, dispatcher, "Передает команды пользователя")
+Rel(dispatcher, crypto, "Просит зашифровать/дешифровать")
+Rel(dispatcher, vault, "Читает закешированные данные")
+Rel(dispatcher, sync, "register/login/refresh/logout,\nadd/get/list/delete/sync")
+
+Rel(session, localstore, "Читает/пишет токены", "зашифрованные")
+
+Rel(vault, localstore, "Читает/пишет данные и метаданные")
+
+Rel(sync, localstore, "Чтение/запись зашифрованных данных")
+Rel(sync, session, "Передает токены")
+Rel(sync, vault, "Работает с данными при синхронизации")
 
 @enduml

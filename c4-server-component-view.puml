@@ -3,31 +3,32 @@
 
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
-skinparam wrapWidth 300
 
 title
-<b>Remote Backend (Go): Component Diagram</b>
-<i>Удалённый сервер: gRPC API, хранилище и логика</i>
+  <b>GophKeeper v2025.08.07</b>
+  <i>Компонентная диаграмма: Backend Core</i>
 end title
 
-Container_Boundary(remote_backend, "Удалённый сервер", "Go", "Обрабатывает gRPC-запросы и управляет данными"){
-    Component(grpc_api, "gRPC API", "Go + gRPC", "Получает команды от локального агента")
-    Component(auth_service, "Auth Service", "Go", "Аутентификация и авторизация пользователей")
-    Component(command_processor, "Command Processor", "Go", "Обработка команд: CRUD, регистрация, синхронизация")
-    Component(user_manager, "User Manager", "Go", "Управление учётными записями")
-    Component(data_repository, "Data Repository", "PostgreSQL", "Доступ к зашифрованным данным")
-    Component(file_storage_adapter, "File Storage Adapter", "S3-compatible", "Работа с бинарными файлами")
-    Component(key_management, "Key Management", "Go", "Управление ключами шифрования")
-    Component(conflict_resolver, "Conflict Resolver", "Go", "Разрешение конфликтов при синхронизации")
-
-    Rel(grpc_api, auth_service, "Проверка токена и доступа")
-    Rel(grpc_api, command_processor, "Передаёт команды от клиента")
-
-    Rel(command_processor, data_repository, "Чтение и запись зашифрованных данных")
-    Rel(command_processor, file_storage_adapter, "Чтение/запись файлов (бинарных данных)")
-    Rel(command_processor, user_manager, "Доступ к данным пользователя")
-    Rel(command_processor, key_management, "Доступ к ключам пользователя")
-    Rel(command_processor, conflict_resolver, "Обработка конфликтов")
+' ==== Компоненты ядра ====
+Container_Boundary(backend_core, "Backend Core"){
+  Component(api_gateway, "gRPC API Gateway", "Go + gRPC", "Принимает запросы от клиентов, маршрутизирует их к сервисам")
+  Component(auth_service, "Auth Service", "Go", "Регистрация, аутентификация, управление сессиями, выдача access/refresh токенов")
+  Component(data_service, "Data Storage Service", "Go", "Работает с данными и метаданными")
+  Component(session_validator, "Session Validator", "Go", "Проверяет валидность access-токена, интегрирован в Auth Service")
 }
+' ==== Внешние системы ====
+ContainerDb(pg_db, "PostgreSQL", "SQL", "Хранит пользователей и метаданные")
+ContainerDb(s3_store, "S3 Storage", "S3-compatible", "Хранит зашифрованные данные")
+
+' ==== Взаимодействия ====
+Rel(api_gateway, auth_service, "Регистрация, аутентификация, refresh")
+Rel(api_gateway, data_service, "CRUD данных")
+
+Rel(auth_service, session_validator, "Проверка токенов")
+Rel(auth_service, pg_db, "Чтение/запись пользователей", "SQL")
+
+Rel(data_service, pg_db, "Чтение/запись метаданных", "SQL")
+Rel_R(data_service, s3_store, "Чтение/запись зашифрованных данных", "S3 API")
 
 @enduml
+
