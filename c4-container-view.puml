@@ -1,0 +1,40 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+skinparam wrapWidth 300
+LAYOUT_WITH_LEGEND()
+
+title
+  <b>GophKeeper v2025.08.07</b>
+  <i>Менеджер паролей: containers</i>
+end title
+
+Person(user, "Пользователь")
+System_Ext(browser, "Веб-браузер", "Взаимодействует с локальным агентом через HTTPS")
+
+System_Boundary(password_manager_system, "Password Manager System") {
+
+    Container_Boundary(local_agent, "Локальный агент") {
+        Container_Ext(agent_web_ui, "Web UI агента", "HTML/JS", "Предоставляет веб-интерфейс пользователю через HTTPS")
+        Container(agent_service, "Агент (Go-приложение)", "Go", "Обрабатывает команды, выполняет локальную логику, синхронизирует данные с сервером")
+
+        Rel(agent_web_ui, agent_service, "Отправляет команды / получает данные", "RESP API / JSON")
+    }
+    Container_Boundary(remote_backend, "Удалённый сервер") {
+        Container(api_server, "gRPC API", "Go", "Обрабатывает gRPC-запросы от агента и реализует бизнес-логику")
+        ContainerDb(database, "База данных", "PostgreSQL", "Хранит зашифрованные пользовательские данные")
+        Container(file_storage, "Хранилище файлов", "S3-compatible", "Хранит бинарные данные (файлы, вложения и т. д.)")
+
+        Rel(api_server, database, "Чтение и запись пользовательских данных", "SQL")
+        Rel(api_server, file_storage, "Работа с бинарными файлами", "S3 API / File I/O")
+    }
+
+    Rel(agent_service, api_server, "gRPC-запросы: синхронизация, регистрация, авторизация", "gRPC")
+}
+
+Rel(user, browser, "Открывает локальный интерфейс")
+Rel(browser, agent_web_ui, "Взаимодействует с UI", "HTTPS")
+
+
+
+@enduml

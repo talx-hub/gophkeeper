@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+skinparam wrapWidth 300
+
+title
+<b>Remote Backend (Go): Component Diagram</b>
+<i>Удалённый сервер: gRPC API, хранилище и логика</i>
+end title
+
+Container_Boundary(remote_backend, "Удалённый сервер", "Go", "Обрабатывает gRPC-запросы и управляет данными"){
+    Component(grpc_api, "gRPC API", "Go + gRPC", "Получает команды от локального агента")
+    Component(auth_service, "Auth Service", "Go", "Аутентификация и авторизация пользователей")
+    Component(command_processor, "Command Processor", "Go", "Обработка команд: CRUD, регистрация, синхронизация")
+    Component(user_manager, "User Manager", "Go", "Управление учётными записями")
+    Component(data_repository, "Data Repository", "PostgreSQL", "Доступ к зашифрованным данным")
+    Component(file_storage_adapter, "File Storage Adapter", "S3-compatible", "Работа с бинарными файлами")
+    Component(key_management, "Key Management", "Go", "Управление ключами шифрования")
+    Component(conflict_resolver, "Conflict Resolver", "Go", "Разрешение конфликтов при синхронизации")
+
+    Rel(grpc_api, auth_service, "Проверка токена и доступа")
+    Rel(grpc_api, command_processor, "Передаёт команды от клиента")
+
+    Rel(command_processor, data_repository, "Чтение и запись зашифрованных данных")
+    Rel(command_processor, file_storage_adapter, "Чтение/запись файлов (бинарных данных)")
+    Rel(command_processor, user_manager, "Доступ к данным пользователя")
+    Rel(command_processor, key_management, "Доступ к ключам пользователя")
+    Rel(command_processor, conflict_resolver, "Обработка конфликтов")
+}
+
+@enduml

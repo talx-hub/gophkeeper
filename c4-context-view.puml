@@ -1,0 +1,25 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+skinparam wrapWidth 300
+LAYOUT_WITH_LEGEND()
+
+title
+  <b>GophKeeper v2025.08.07</b>
+  <i>Менеджер паролей: bird's-eye view</i>
+end title
+
+Person(user, "Пользователь")
+
+System_Ext(browser, "Веб-браузер", "Взаимодействует с локальным агентом через HTTPS")
+
+System_Boundary(password_manager_system, "Password Manager System") {
+    System(agent, "Локальный агент", "Go-приложение, установленное на устройстве пользователя. Обрабатывает команды и синхронизирует данные с сервером")
+    System(remote_backend, "Удалённый сервер", "Go-сервис, обрабатывающий запросы от агента по gRPC и управляющий данными")
+}
+
+Rel(user, browser, "Работает через веб-интерфейс")
+Rel(browser, agent, "Отправляет запросы к API и получает данные", "HTTPS")
+Rel(agent, remote_backend, "Синхронизирует данные и дает команды", "gRPC")
+
+@enduml

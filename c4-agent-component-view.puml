@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+skinparam wrapWidth 300
+
+title
+<b>Agent Service (Go): Component Diagram</b>
+<i>Основные компоненты локального агента</i>
+end title
+
+Container_Boundary(agent_service, "Агент (Go-приложение)"){
+    Component(agent_http_api, "HTTP API", "net/http", "Принимает команды от локального UI по HTTPS")
+    Component(command_handler, "Command Handler", "Go", "Обрабатывает команды: CRUD, синхронизация, логин")
+    Component(local_storage, "Local Storage", "Встроенное хранилище", "Хранит ключи, токены, временные данные")
+    Component(grpc_client, "gRPC Client", "gRPC", "Общается с удалённым сервером по защищённому каналу")
+    Component(session_manager, "Session Manager", "Go", "Управляет сессиями, авторизацией, токенами")
+    Component(sync_scheduler, "Sync Scheduler", "Go", "Запускает синхронизацию вручную или по расписанию")
+
+    Rel(agent_http_api, command_handler, "Передаёт команды из UI")
+    Rel(command_handler, grpc_client, "Отправляет команды и данные на сервер")
+    Rel(command_handler, local_storage, "Чтение/запись временных данных")
+    Rel(command_handler, session_manager, "Авторизация, проверка токенов")
+    Rel(sync_scheduler, command_handler, "Инициирует синхронизацию")
+}
+
+@enduml
