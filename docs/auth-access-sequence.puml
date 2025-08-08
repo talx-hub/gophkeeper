@@ -1,0 +1,46 @@
+@startuml
+title
+<b>GophKeeper v2025.08.08</b>
+<i>Процесс: login → использование → refresh → logout (одно устройство)</i>
+end title
+
+actor User as U
+participant "CLI (Session Manager)" as CLI
+participant "gRPC Client" as GC
+participant "Auth Service" as AS
+database "PostgreSQL (refresh_tokens)" as DB
+
+== Login ==
+U -> CLI: Ввод логина/пароля
+CLI -> GC: Запрос login(email, password)
+GC -> AS: gRPC login(email, password)
+AS -> DB: Создать refresh-токен (UUID), записать user_id, expires_at
+DB --> AS: OK
+AS --> GC: access (JWT, 15 мин) + refresh (UUID, 30 дней)
+GC --> CLI: Сохраняет access в RAM, refresh в Local Cache (зашифрован)
+
+== Запрос с access ==
+U -> CLI: Выполнить команду
+CLI -> GC: gRPC запрос с access-токеном
+GC -> AS: Проверка подписи и exp JWT
+AS --> GC: OK, ответ по запросу
+
+== Refresh access ==
+... Спустя 15 минут ...
+CLI -> GC: Обновить access (refresh)
+GC -> AS: gRPC refresh(refresh_token)
+AS -> DB: Найти refresh-токен, проверить expires_at и revoked
+DB --> AS: OK
+AS --> GC: Новый access (JWT) + (опционально новый refresh)
+GC --> CLI: Обновляет access в RAM (и refresh, если выдан)
+
+== Logout ==
+U -> CLI: logout
+CLI -> GC: gRPC logout(refresh_token)
+GC -> AS: Запрос на logout(refresh_token)
+AS -> DB: Найти refresh-токен, пометить revoked=true
+DB --> AS: OK
+AS --> GC: 200 OK
+GC --> CLI: Удаляет access из RAM и refresh из Local Cache
+
+@enduml

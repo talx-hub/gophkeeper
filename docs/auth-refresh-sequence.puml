@@ -1,0 +1,36 @@
+@startuml
+title
+<b>GophKeeper v2025.08.08</b>
+<i>Процесс refresh: refresh просрочен или отозван</i>
+end title
+
+actor User as U
+participant "CLI (Session Manager)" as CLI
+participant "gRPC Client" as GC
+participant "Auth Service" as AS
+database "PostgreSQL (refresh_tokens)" as DB
+
+== Попытка refresh ==
+... Access истёк ...
+CLI -> GC: Запрос refresh(refresh_token)
+GC -> AS: gRPC refresh(refresh_token)
+AS -> DB: Найти refresh-токен по UUID
+alt refresh не найден
+    DB --> AS: NULL
+    AS --> GC: Ошибка 401 Unauthorized (refresh invalid)
+else refresh найден
+    DB --> AS: refresh_token { expires_at, revoked }
+    alt refresh просрочен (expires_at < now)
+        AS --> GC: Ошибка 401 Unauthorized (refresh expired)
+    else refresh отозван (revoked = true)
+        AS --> GC: Ошибка 401 Unauthorized (refresh revoked)
+    end
+end
+
+== Реакция клиента ==
+GC --> CLI: Ошибка 401 Unauthorized
+CLI -> U: Сообщение "Сессия истекла, требуется повторный login"
+CLI -> U: Удаляет refresh из Local Cache
+CLI -> U: Удаляет access из RAM
+
+@enduml
