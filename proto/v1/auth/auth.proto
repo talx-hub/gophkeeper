@@ -1,0 +1,88 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/api/v1/auth";
+package gophkeeper.v1.auth;
+
+import "google/protobuf/empty.proto";
+
+// AuthService — сервис аутентификации и управления сессиями пользователей.
+//
+// Этот сервис предоставляет методы для регистрации новых пользователей, входа в систему и выхода из неё.
+// При успешной регистрации и входе возвращаются учетные данные — access и refresh токены,
+// которые используются для авторизации последующих запросов.
+// Метод Logout позволяет инвалидировать refresh токен, обеспечивая корректное завершение сессии.
+//
+// Основные методы:
+//  - Register: регистрация нового пользователя с передачей логина и пароля.
+//  - Login: аутентификация пользователя с возвратом токенов доступа.
+//  - Logout: завершение сессии пользователя с инвалидированием refresh токена.
+//
+// Важно: пароли должны передаваться и храниться безопасно (рекомендуется использовать хэширование и TLS).
+service AuthService {
+  // Регистрация нового пользователя.
+  // При успешной регистрации возвращает credentials (access и refresh токены).
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Вход пользователя в систему.
+  // Возвращает credentials для дальнейших запросов (access и refresh токены).
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Выход пользователя (инвалидирует refresh токен).
+  // Возвращает пустой ответ при успешном logout.
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+}
+
+// ====================================
+// ===  Сообщения верхнего уровня ===
+// ====================================
+
+// Запрос на регистрацию нового пользователя.
+message RegisterRequest {
+  AuthData auth_data = 1;
+}
+
+// Ответ с токенами аутентификации после регистрации.
+message RegisterResponse {
+  Credentials credentials = 1;
+}
+
+// Запрос на вход пользователя.
+message LoginRequest {
+  AuthData auth_data = 1;
+}
+
+// Ответ с токенами аутентификации после входа.
+message LoginResponse {
+  Credentials credentials = 1;
+}
+
+// Запрос на выход (logout).
+message LogoutRequest {
+  RefreshToken refresh_token = 1;
+}
+
+// ====================================
+// ===  Внутренние структуры данных ===
+// ====================================
+
+// Данные аутентификации пользователя.
+message AuthData{
+  string login = 1;
+  string password = 2;
+}
+
+// Учетные данные, включающие access и refresh токены.
+message Credentials {
+  AccessToken access_token = 1;
+  RefreshToken refresh_token = 2;
+}
+
+// Access токен, используемый для авторизации запросов.
+message AccessToken {
+  string access_token = 1;
+}
+
+// Refresh токен, используемый для обновления access токена.
+message RefreshToken {
+  string refresh_token = 1;
+}
