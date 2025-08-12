@@ -2,6 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
+cmd/server/server
 *.exe
 *.exe~
 *.dll
@@ -16,6 +17,7 @@
 coverage.*
 *.coverprofile
 profile.cov
+golangci-lint/
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
