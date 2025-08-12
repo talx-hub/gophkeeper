@@ -12,6 +12,7 @@ skinparam linetype ortho
 
 Table(users, "users") {
   PK(id) : UUID
+
   hash : TEXT
 }
 
@@ -19,36 +20,42 @@ Table(users, "users") {
 Table(passwords, "passwords") {
   PK(id) : UUID
   FK(id_user) : UUID
+
   hash : TEXT
 }
 
 
 Table(types, "types") {
   PK(id) : INT
+
   name : VARCHAR(30)
 }
 
 
-Table(metadata, "metadata") {
+Table(data, "data") {
   PK(id) : INT
   FK(id_user) : UUID
   FK(id_type) : INT
+
+  data: BYTEA
   note : TEXT
+  s3_key: TEXT
 }
 
 
 Table(refresh_tokens, "refresh_tokens") {
   PK(id) : UUID
   FK(id_user) : UUID
+
   expires_at : timestamptz
 }
 
 
 ' Отношения
 users "1" <-- "0..*" passwords : id_user\n(ON DELETE CASCADE)
-users "1" <-- "0..*" metadata : id_user\n(ON DELETE RESTRICT)
+users "1" <-- "0..*" data : id_user\n(ON DELETE RESTRICT)
 users "1" <-- "0..*" refresh_tokens : id_user\n(ON DELETE CASCADE)
-metadata "0..*" -->"1" types : id_type (ON DELETE RESTRICT)
+data "0..*" -->"1" types : id_type (ON DELETE RESTRICT)
 
 
 
