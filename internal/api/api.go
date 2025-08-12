@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
+	"sync"
 
 	"google.golang.org/grpc"
 
-	"github.com/talx-hub/gophkeeper/internal/api/v1"
+	v1 "github.com/talx-hub/gophkeeper/internal/api/v1"
 	"github.com/talx-hub/gophkeeper/proto/v1/auth"
 	"github.com/talx-hub/gophkeeper/proto/v1/health"
 	"github.com/talx-hub/gophkeeper/proto/v1/keeper"
@@ -15,6 +17,7 @@ import (
 
 type Server struct {
 	grpcServer *grpc.Server
+	m          sync.Mutex
 	// cfg *server.Builder
 	// storage Storage
 	// log *slog.Logger
@@ -34,27 +37,29 @@ func (s *Server) Start() error {
 		// TODO: s.log.Fatal().Err(err).Msg(errMsg)
 		return fmt.Errorf("%s: %w", errMsg, err)
 	}
+	s.m.Lock()
 	s.grpcServer = grpc.NewServer(
 		grpc.ChainUnaryInterceptor())
+	s.m.Unlock()
 	auth.RegisterAuthServiceServer(s.grpcServer, &v1.AuthService{})
 	health.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
 	keeper.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
 
-	errCh := make(chan error)
-	defer close(errCh)
-
-	go func() {
-		errCh <- s.grpcServer.Serve(lis)
-	}()
-
-	return <-errCh
+	return s.grpcServer.Serve(lis)
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	done := make(chan struct{})
-	defer close(done)
+	s.m.Lock()
+	if s.grpcServer == nil {
+		s.m.Unlock()
+		return errors.New("trying to close nil gRPC-server")
+	}
+	s.m.Unlock()
 
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
+
 		s.grpcServer.GracefulStop()
 		done <- struct{}{}
 	}()
