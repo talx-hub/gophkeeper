@@ -7,8 +7,15 @@ import (
 )
 
 func main() {
-	s := api.NewServer("localhost:9999")
-	if err := s.Start(); err != nil {
+	if err := run("localhost:9999"); err != nil {
 		fmt.Println(err)
 	}
+}
+
+func run(address string) error {
+	s := api.NewServer(address)
+	if err := s.Start(); err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+	return nil
 }
