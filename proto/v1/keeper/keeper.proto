@@ -1,17 +1,17 @@
 edition = "2023";
 
-package gokeeper.v1.keeper;
-
-option go_package = "github.com/talx-hub/gophkeeper/api/v1/keeper";
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/keeper;keeperpb";
+package gophkeeper.v1.keeper;
 
 import "google/protobuf/empty.proto";
+import "proto/v1/common.proto";
 
 // Keeper — сервис для управления и синхронизации данных пользователя,
 // включая данные для входа в различные сервисы, информацию по картам и бинарные файлы.
 service Keeper {
   // Sync — потоковый RPC для синхронизации данных между клиентом и сервером.
   // Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
-  rpc Sync(SyncRequest) returns (stream SyncResponse); // ????? stream
+  rpc Sync(SyncRequest) returns (stream SyncResponse);
 
   // Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
   rpc Add(AddRequest) returns (google.protobuf.Empty);
@@ -49,27 +49,27 @@ message SyncRequest {
 // Поток сообщений SyncResponse позволяет серверу поэтапно
 // отправлять данные клиенту.
 message SyncResponse {
-  Data data = 1; // ?????? repeated???
+  EncryptedWithMetadata data = 1;
 }
 
 // Запрос на добавление нового объекта данных.
 message AddRequest {
-  Data data = 1;
+  EncryptedWithMetadata data = 1;
 }
 
 // Запрос получения объекта данных по метаданным.
 message GetRequest {
-  Metadata metadata = 1;
+  gophkeeper.v1.common.Metadata metadata = 1;
 }
 
 // Ответ на запрос Get: возвращает полный объект данных.
 message GetResponse {
-  Data data = 1;
+  EncryptedWithMetadata data = 1;
 }
 
 // Запрос на удаление объекта данных по метаданным.
 message DeleteRequest {
-  Metadata metadata = 1;
+  gophkeeper.v1.common.Metadata metadata = 1;
 }
 
 // Запрос на получение списка объектов.
@@ -80,39 +80,29 @@ message ListRequest {
 
 // Ответ на запрос списка: список метаданных объектов, сохранённых в хранилище.
 message ListResponse {
-  repeated Metadata metadata = 1;
+  repeated gophkeeper.v1.common.Metadata metadata = 1;
 }
 
 // ====================================
 // ===  Внутренние структуры данных ===
 // ====================================
 
-// 1. хотелось бы прередавать зашифрованные сообщения.... неужели красивую структуру
-// переделывать под bytes? или шифровать, а затем []byte энкодить в Base64?
-
-// 2. интересно, а как стримить BinaryData, при запросе на синхронизацию?
-// то есть, мы запрашиваем вообще всё, часть данных прилетит одиночно,
-// а BinaryData может быть разбита на чанки... как это правильно обработать,
-// если хочу делать stream? можно ли открыть 2 канала: один стрим для одиночных посылок,
-// второй для групп чанков?
+// Данные для передаваемые между агентом и сервером
+message EncryptedWithMetadata {
+  gophkeeper.v1.common.Metadata metadata = 1;
+  bytes data = 2;
+}
 
 
-// Основной объект данных.
-// Каждое сообщение содержит метаданные и один из возможных типов данных,
-// определённых в oneof.
-message Data {
-  Metadata metadata = 1; // метаданные объекта
-  oneof type{
+// Основной объект данных, используемый и шифруемый агентом.
+// Каждое сообщение содержит метаданные и один из возможных типов данных.
+message UnencryptedData {
+  gophkeeper.v1.common.Metadata metadata = 1; // метаданные объекта
+  oneof type {
     AuthData auth_data = 2; // данные сайтов и сервисов
     CardInfo card_info = 3; // данные банковских карт
     Binary binary = 4;      // файлы
   };
-}
-
-// Метаданные, описывающие объект данных.
-// Здесь хранится основная информация для идентификации объекта.
-message Metadata {
-  string meta_info = 1;
 }
 
 // Данные сайтов или сервисов: логин и пароль.
@@ -124,9 +114,8 @@ message AuthData {
 // Информация по банковской карте: номер, дата выпуска, имя и фамилия владельца.
 message CardInfo {
   string card_number = 1;
-  string issued_at = 2;
-  string name = 3;
-  string surname = 4;
+  string expiry = 2;
+  string owner = 3;
 }
 
 // Бинарные данные, разбитые на чанки для передачи по сети.

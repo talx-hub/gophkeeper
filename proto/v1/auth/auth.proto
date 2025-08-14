@@ -1,6 +1,6 @@
 edition = "2023";
 
-option go_package = "github.com/talx-hub/gophkeeper/api/v1/auth";
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/auth;authpb";
 package gophkeeper.v1.auth;
 
 import "google/protobuf/empty.proto";

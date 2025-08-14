@@ -4,7 +4,7 @@
 // - protoc             v6.32.0--rc1
 // source: proto/v1/keeper/keeper.proto
 
-package keeper
+package keeperpb
 
 import (
 	context "context"
@@ -20,11 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Keeper_Sync_FullMethodName   = "/gokeeper.v1.keeper.Keeper/Sync"
-	Keeper_Add_FullMethodName    = "/gokeeper.v1.keeper.Keeper/Add"
-	Keeper_List_FullMethodName   = "/gokeeper.v1.keeper.Keeper/List"
-	Keeper_Get_FullMethodName    = "/gokeeper.v1.keeper.Keeper/Get"
-	Keeper_Delete_FullMethodName = "/gokeeper.v1.keeper.Keeper/Delete"
+	Keeper_Sync_FullMethodName   = "/gophkeeper.v1.keeper.Keeper/Sync"
+	Keeper_Add_FullMethodName    = "/gophkeeper.v1.keeper.Keeper/Add"
+	Keeper_List_FullMethodName   = "/gophkeeper.v1.keeper.Keeper/List"
+	Keeper_Get_FullMethodName    = "/gophkeeper.v1.keeper.Keeper/Get"
+	Keeper_Delete_FullMethodName = "/gophkeeper.v1.keeper.Keeper/Delete"
 )
 
 // KeeperClient is the client API for Keeper service.
@@ -267,7 +267,7 @@ func _Keeper_Delete_Handler(srv interface{}, ctx context.Context, dec func(inter
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Keeper_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "gokeeper.v1.keeper.Keeper",
+	ServiceName: "gophkeeper.v1.keeper.Keeper",
 	HandlerType: (*KeeperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

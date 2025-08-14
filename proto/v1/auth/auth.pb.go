@@ -4,7 +4,7 @@
 // 	protoc        v6.32.0--rc1
 // source: proto/v1/auth/auth.proto
 
-package auth
+package authpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -471,7 +471,7 @@ const file_proto_v1_auth_auth_proto_rawDesc = "" +
 	"\vAuthService\x12U\n" +
 	"\bRegister\x12#.gophkeeper.v1.auth.RegisterRequest\x1a$.gophkeeper.v1.auth.RegisterResponse\x12L\n" +
 	"\x05Login\x12 .gophkeeper.v1.auth.LoginRequest\x1a!.gophkeeper.v1.auth.LoginResponse\x12C\n" +
-	"\x06Logout\x12!.gophkeeper.v1.auth.LogoutRequest\x1a\x16.google.protobuf.EmptyB,Z*github.com/talx-hub/gophkeeper/api/v1/authb\beditionsp\xe8\a"
+	"\x06Logout\x12!.gophkeeper.v1.auth.LogoutRequest\x1a\x16.google.protobuf.EmptyB<Z:github.com/talx-hub/gophkeeper/internal/api/v1/auth;authpbb\beditionsp\xe8\a"
 
 var (
 	file_proto_v1_auth_auth_proto_rawDescOnce sync.Once

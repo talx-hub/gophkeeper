@@ -7,11 +7,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/talx-hub/gophkeeper/proto/v1/health"
+	healthpb "github.com/talx-hub/gophkeeper/proto/v1/health"
 )
 
 type HealthService struct {
-	health.UnimplementedHealthServiceServer
+	healthpb.UnimplementedHealthServiceServer
 }
 
 func (h *HealthService) Ping(ctx context.Context, empty *emptypb.Empty) (*emptypb.Empty, error) {

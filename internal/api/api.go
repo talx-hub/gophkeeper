@@ -10,23 +10,33 @@ import (
 	"google.golang.org/grpc"
 
 	v1 "github.com/talx-hub/gophkeeper/internal/api/v1"
-	"github.com/talx-hub/gophkeeper/proto/v1/auth"
-	"github.com/talx-hub/gophkeeper/proto/v1/health"
-	"github.com/talx-hub/gophkeeper/proto/v1/keeper"
+	"github.com/talx-hub/gophkeeper/internal/model/common"
+	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
+	healthpb "github.com/talx-hub/gophkeeper/proto/v1/health"
+	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
 )
+
+type Storage interface {
+	Add(context.Context, common.Metadata, []byte) error
+	Get(context.Context, common.Metadata) ([]byte, error)
+	List(context.Context) ([]common.Metadata, error)
+	Delete(context.Context, common.Metadata) error
+}
 
 type Server struct {
 	grpcServer *grpc.Server
-	m          sync.Mutex
+	storage    Storage
 	// cfg *server.Builder
 	// storage Storage
 	// log *slog.Logger
 	address string
+	m       sync.Mutex
 }
 
-func NewServer(address string) *Server {
+func NewServer(address string, storage Storage) *Server {
 	return &Server{
 		address: address,
+		storage: storage,
 	}
 }
 
@@ -41,10 +51,11 @@ func (s *Server) Start() error {
 	s.grpcServer = grpc.NewServer(
 		grpc.ChainUnaryInterceptor())
 	s.m.Unlock()
-	auth.RegisterAuthServiceServer(s.grpcServer, &v1.AuthService{})
-	health.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
-	keeper.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
+	authpb.RegisterAuthServiceServer(s.grpcServer, &v1.AuthService{})
+	healthpb.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
+	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
 
+	//nolint:wrapcheck // error could be nil
 	return s.grpcServer.Serve(lis)
 }
 

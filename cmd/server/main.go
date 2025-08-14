@@ -13,7 +13,7 @@ func main() {
 }
 
 func run(address string) error {
-	s := api.NewServer(address)
+	s := api.NewServer(address, nil)
 	if err := s.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}

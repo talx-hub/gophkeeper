@@ -4,9 +4,10 @@
 // 	protoc        v6.32.0--rc1
 // source: proto/v1/keeper/keeper.proto
 
-package keeper
+package keeperpb
 
 import (
+	common "github.com/talx-hub/gophkeeper/internal/model/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -78,7 +79,7 @@ func (SyncRequest_SyncMode) EnumDescriptor() ([]byte, []int) {
 // - SYNC_MODE_FULL: полная синхронизация всех данных, включая бинарные.
 type SyncRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SyncMode      *SyncRequest_SyncMode  `protobuf:"varint,1,opt,name=sync_mode,json=syncMode,enum=gokeeper.v1.keeper.SyncRequest_SyncMode" json:"sync_mode,omitempty"`
+	SyncMode      *SyncRequest_SyncMode  `protobuf:"varint,1,opt,name=sync_mode,json=syncMode,enum=gophkeeper.v1.keeper.SyncRequest_SyncMode" json:"sync_mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -125,7 +126,7 @@ func (x *SyncRequest) GetSyncMode() SyncRequest_SyncMode {
 // отправлять данные клиенту.
 type SyncResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *Data                  `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"` // ?????? repeated???
+	Data          *EncryptedWithMetadata `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -160,7 +161,7 @@ func (*SyncResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SyncResponse) GetData() *Data {
+func (x *SyncResponse) GetData() *EncryptedWithMetadata {
 	if x != nil {
 		return x.Data
 	}
@@ -170,7 +171,7 @@ func (x *SyncResponse) GetData() *Data {
 // Запрос на добавление нового объекта данных.
 type AddRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *Data                  `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	Data          *EncryptedWithMetadata `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -205,7 +206,7 @@ func (*AddRequest) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AddRequest) GetData() *Data {
+func (x *AddRequest) GetData() *EncryptedWithMetadata {
 	if x != nil {
 		return x.Data
 	}
@@ -215,7 +216,7 @@ func (x *AddRequest) GetData() *Data {
 // Запрос получения объекта данных по метаданным.
 type GetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Metadata      *Metadata              `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	Metadata      *common.Metadata       `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -250,7 +251,7 @@ func (*GetRequest) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetRequest) GetMetadata() *Metadata {
+func (x *GetRequest) GetMetadata() *common.Metadata {
 	if x != nil {
 		return x.Metadata
 	}
@@ -260,7 +261,7 @@ func (x *GetRequest) GetMetadata() *Metadata {
 // Ответ на запрос Get: возвращает полный объект данных.
 type GetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *Data                  `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	Data          *EncryptedWithMetadata `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -295,7 +296,7 @@ func (*GetResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetResponse) GetData() *Data {
+func (x *GetResponse) GetData() *EncryptedWithMetadata {
 	if x != nil {
 		return x.Data
 	}
@@ -305,7 +306,7 @@ func (x *GetResponse) GetData() *Data {
 // Запрос на удаление объекта данных по метаданным.
 type DeleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Metadata      *Metadata              `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	Metadata      *common.Metadata       `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -340,7 +341,7 @@ func (*DeleteRequest) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *DeleteRequest) GetMetadata() *Metadata {
+func (x *DeleteRequest) GetMetadata() *common.Metadata {
 	if x != nil {
 		return x.Metadata
 	}
@@ -396,7 +397,7 @@ func (x *ListRequest) GetIncludeBinary() bool {
 // Ответ на запрос списка: список метаданных объектов, сохранённых в хранилище.
 type ListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Metadata      []*Metadata            `protobuf:"bytes,1,rep,name=metadata" json:"metadata,omitempty"`
+	Metadata      []*common.Metadata     `protobuf:"bytes,1,rep,name=metadata" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -431,43 +432,36 @@ func (*ListResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ListResponse) GetMetadata() []*Metadata {
+func (x *ListResponse) GetMetadata() []*common.Metadata {
 	if x != nil {
 		return x.Metadata
 	}
 	return nil
 }
 
-// Основной объект данных.
-// Каждое сообщение содержит метаданные и один из возможных типов данных,
-// определённых в oneof.
-type Data struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Metadata *Metadata              `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"` // метаданные объекта
-	// Types that are valid to be assigned to Type:
-	//
-	//	*Data_AuthData
-	//	*Data_CardInfo
-	//	*Data_Binary
-	Type          isData_Type `protobuf_oneof:"type"`
+// Данные для передаваемые между агентом и сервером
+type EncryptedWithMetadata struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metadata      *common.Metadata       `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	Data          []byte                 `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Data) Reset() {
-	*x = Data{}
+func (x *EncryptedWithMetadata) Reset() {
+	*x = EncryptedWithMetadata{}
 	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Data) String() string {
+func (x *EncryptedWithMetadata) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Data) ProtoMessage() {}
+func (*EncryptedWithMetadata) ProtoMessage() {}
 
-func (x *Data) ProtoReflect() protoreflect.Message {
+func (x *EncryptedWithMetadata) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -479,119 +473,132 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Data.ProtoReflect.Descriptor instead.
-func (*Data) Descriptor() ([]byte, []int) {
+// Deprecated: Use EncryptedWithMetadata.ProtoReflect.Descriptor instead.
+func (*EncryptedWithMetadata) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *Data) GetMetadata() *Metadata {
+func (x *EncryptedWithMetadata) GetMetadata() *common.Metadata {
 	if x != nil {
 		return x.Metadata
 	}
 	return nil
 }
 
-func (x *Data) GetType() isData_Type {
+func (x *EncryptedWithMetadata) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+// Основной объект данных, используемый и шифруемый агентом.
+// Каждое сообщение содержит метаданные и один из возможных типов данных.
+type UnencryptedData struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Metadata *common.Metadata       `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"` // метаданные объекта
+	// Types that are valid to be assigned to Type:
+	//
+	//	*UnencryptedData_AuthData
+	//	*UnencryptedData_CardInfo
+	//	*UnencryptedData_Binary
+	Type          isUnencryptedData_Type `protobuf_oneof:"type"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnencryptedData) Reset() {
+	*x = UnencryptedData{}
+	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnencryptedData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnencryptedData) ProtoMessage() {}
+
+func (x *UnencryptedData) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnencryptedData.ProtoReflect.Descriptor instead.
+func (*UnencryptedData) Descriptor() ([]byte, []int) {
+	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UnencryptedData) GetMetadata() *common.Metadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *UnencryptedData) GetType() isUnencryptedData_Type {
 	if x != nil {
 		return x.Type
 	}
 	return nil
 }
 
-func (x *Data) GetAuthData() *AuthData {
+func (x *UnencryptedData) GetAuthData() *AuthData {
 	if x != nil {
-		if x, ok := x.Type.(*Data_AuthData); ok {
+		if x, ok := x.Type.(*UnencryptedData_AuthData); ok {
 			return x.AuthData
 		}
 	}
 	return nil
 }
 
-func (x *Data) GetCardInfo() *CardInfo {
+func (x *UnencryptedData) GetCardInfo() *CardInfo {
 	if x != nil {
-		if x, ok := x.Type.(*Data_CardInfo); ok {
+		if x, ok := x.Type.(*UnencryptedData_CardInfo); ok {
 			return x.CardInfo
 		}
 	}
 	return nil
 }
 
-func (x *Data) GetBinary() *Binary {
+func (x *UnencryptedData) GetBinary() *Binary {
 	if x != nil {
-		if x, ok := x.Type.(*Data_Binary); ok {
+		if x, ok := x.Type.(*UnencryptedData_Binary); ok {
 			return x.Binary
 		}
 	}
 	return nil
 }
 
-type isData_Type interface {
-	isData_Type()
+type isUnencryptedData_Type interface {
+	isUnencryptedData_Type()
 }
 
-type Data_AuthData struct {
+type UnencryptedData_AuthData struct {
 	AuthData *AuthData `protobuf:"bytes,2,opt,name=auth_data,json=authData,oneof"` // данные сайтов и сервисов
 }
 
-type Data_CardInfo struct {
+type UnencryptedData_CardInfo struct {
 	CardInfo *CardInfo `protobuf:"bytes,3,opt,name=card_info,json=cardInfo,oneof"` // данные банковских карт
 }
 
-type Data_Binary struct {
+type UnencryptedData_Binary struct {
 	Binary *Binary `protobuf:"bytes,4,opt,name=binary,oneof"` // файлы
 }
 
-func (*Data_AuthData) isData_Type() {}
+func (*UnencryptedData_AuthData) isUnencryptedData_Type() {}
 
-func (*Data_CardInfo) isData_Type() {}
+func (*UnencryptedData_CardInfo) isUnencryptedData_Type() {}
 
-func (*Data_Binary) isData_Type() {}
-
-// Метаданные, описывающие объект данных.
-// Здесь хранится основная информация для идентификации объекта.
-type Metadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MetaInfo      *string                `protobuf:"bytes,1,opt,name=meta_info,json=metaInfo" json:"meta_info,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Metadata) Reset() {
-	*x = Metadata{}
-	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Metadata) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Metadata) ProtoMessage() {}
-
-func (x *Metadata) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_v1_keeper_keeper_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Metadata.ProtoReflect.Descriptor instead.
-func (*Metadata) Descriptor() ([]byte, []int) {
-	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *Metadata) GetMetaInfo() string {
-	if x != nil && x.MetaInfo != nil {
-		return *x.MetaInfo
-	}
-	return ""
-}
+func (*UnencryptedData_Binary) isUnencryptedData_Type() {}
 
 // Данные сайтов или сервисов: логин и пароль.
 type AuthData struct {
@@ -650,9 +657,8 @@ func (x *AuthData) GetPassword() string {
 type CardInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CardNumber    *string                `protobuf:"bytes,1,opt,name=card_number,json=cardNumber" json:"card_number,omitempty"`
-	IssuedAt      *string                `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
-	Name          *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Surname       *string                `protobuf:"bytes,4,opt,name=surname" json:"surname,omitempty"`
+	Expiry        *string                `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty"`
+	Owner         *string                `protobuf:"bytes,3,opt,name=owner" json:"owner,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -694,23 +700,16 @@ func (x *CardInfo) GetCardNumber() string {
 	return ""
 }
 
-func (x *CardInfo) GetIssuedAt() string {
-	if x != nil && x.IssuedAt != nil {
-		return *x.IssuedAt
+func (x *CardInfo) GetExpiry() string {
+	if x != nil && x.Expiry != nil {
+		return *x.Expiry
 	}
 	return ""
 }
 
-func (x *CardInfo) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
-	}
-	return ""
-}
-
-func (x *CardInfo) GetSurname() string {
-	if x != nil && x.Surname != nil {
-		return *x.Surname
+func (x *CardInfo) GetOwner() string {
+	if x != nil && x.Owner != nil {
+		return *x.Owner
 	}
 	return ""
 }
@@ -783,57 +782,57 @@ var File_proto_v1_keeper_keeper_proto protoreflect.FileDescriptor
 
 const file_proto_v1_keeper_keeper_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/v1/keeper/keeper.proto\x12\x12gokeeper.v1.keeper\x1a\x1bgoogle/protobuf/empty.proto\"\xa4\x01\n" +
-	"\vSyncRequest\x12E\n" +
-	"\tsync_mode\x18\x01 \x01(\x0e2(.gokeeper.v1.keeper.SyncRequest.SyncModeR\bsyncMode\"N\n" +
+	"\x1cproto/v1/keeper/keeper.proto\x12\x14gophkeeper.v1.keeper\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15proto/v1/common.proto\"\xa6\x01\n" +
+	"\vSyncRequest\x12G\n" +
+	"\tsync_mode\x18\x01 \x01(\x0e2*.gophkeeper.v1.keeper.SyncRequest.SyncModeR\bsyncMode\"N\n" +
 	"\bSyncMode\x12\x19\n" +
 	"\x15SYNC_MODE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fSYNC_MODE_SHORT\x10\x01\x12\x12\n" +
-	"\x0eSYNC_MODE_FULL\x10\x02\"<\n" +
-	"\fSyncResponse\x12,\n" +
-	"\x04data\x18\x01 \x01(\v2\x18.gokeeper.v1.keeper.DataR\x04data\":\n" +
+	"\x0eSYNC_MODE_FULL\x10\x02\"O\n" +
+	"\fSyncResponse\x12?\n" +
+	"\x04data\x18\x01 \x01(\v2+.gophkeeper.v1.keeper.EncryptedWithMetadataR\x04data\"M\n" +
 	"\n" +
-	"AddRequest\x12,\n" +
-	"\x04data\x18\x01 \x01(\v2\x18.gokeeper.v1.keeper.DataR\x04data\"F\n" +
+	"AddRequest\x12?\n" +
+	"\x04data\x18\x01 \x01(\v2+.gophkeeper.v1.keeper.EncryptedWithMetadataR\x04data\"H\n" +
 	"\n" +
-	"GetRequest\x128\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1c.gokeeper.v1.keeper.MetadataR\bmetadata\";\n" +
-	"\vGetResponse\x12,\n" +
-	"\x04data\x18\x01 \x01(\v2\x18.gokeeper.v1.keeper.DataR\x04data\"I\n" +
-	"\rDeleteRequest\x128\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1c.gokeeper.v1.keeper.MetadataR\bmetadata\"3\n" +
+	"GetRequest\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\"N\n" +
+	"\vGetResponse\x12?\n" +
+	"\x04data\x18\x01 \x01(\v2+.gophkeeper.v1.keeper.EncryptedWithMetadataR\x04data\"K\n" +
+	"\rDeleteRequest\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\"3\n" +
 	"\vListRequest\x12$\n" +
-	"\rincludeBinary\x18\x01 \x01(\bR\rincludeBinary\"H\n" +
-	"\fListResponse\x128\n" +
-	"\bmetadata\x18\x01 \x03(\v2\x1c.gokeeper.v1.keeper.MetadataR\bmetadata\"\xf8\x01\n" +
-	"\x04Data\x128\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1c.gokeeper.v1.keeper.MetadataR\bmetadata\x12;\n" +
-	"\tauth_data\x18\x02 \x01(\v2\x1c.gokeeper.v1.keeper.AuthDataH\x00R\bauthData\x12;\n" +
-	"\tcard_info\x18\x03 \x01(\v2\x1c.gokeeper.v1.keeper.CardInfoH\x00R\bcardInfo\x124\n" +
-	"\x06binary\x18\x04 \x01(\v2\x1a.gokeeper.v1.keeper.BinaryH\x00R\x06binaryB\x06\n" +
-	"\x04type\"'\n" +
-	"\bMetadata\x12\x1b\n" +
-	"\tmeta_info\x18\x01 \x01(\tR\bmetaInfo\"B\n" +
+	"\rincludeBinary\x18\x01 \x01(\bR\rincludeBinary\"J\n" +
+	"\fListResponse\x12:\n" +
+	"\bmetadata\x18\x01 \x03(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\"g\n" +
+	"\x15EncryptedWithMetadata\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\x12\x12\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\x8b\x02\n" +
+	"\x0fUnencryptedData\x12:\n" +
+	"\bmetadata\x18\x01 \x01(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\x12=\n" +
+	"\tauth_data\x18\x02 \x01(\v2\x1e.gophkeeper.v1.keeper.AuthDataH\x00R\bauthData\x12=\n" +
+	"\tcard_info\x18\x03 \x01(\v2\x1e.gophkeeper.v1.keeper.CardInfoH\x00R\bcardInfo\x126\n" +
+	"\x06binary\x18\x04 \x01(\v2\x1c.gophkeeper.v1.keeper.BinaryH\x00R\x06binaryB\x06\n" +
+	"\x04type\"B\n" +
 	"\bAuthData\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"v\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"Y\n" +
 	"\bCardInfo\x12\x1f\n" +
 	"\vcard_number\x18\x01 \x01(\tR\n" +
-	"cardNumber\x12\x1b\n" +
-	"\tissued_at\x18\x02 \x01(\tR\bissuedAt\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\x18\n" +
-	"\asurname\x18\x04 \x01(\tR\asurname\"e\n" +
+	"cardNumber\x12\x16\n" +
+	"\x06expiry\x18\x02 \x01(\tR\x06expiry\x12\x14\n" +
+	"\x05owner\x18\x03 \x01(\tR\x05owner\"e\n" +
 	"\x06Binary\x12!\n" +
 	"\ftotal_chunks\x18\x01 \x01(\x05R\vtotalChunks\x12\x19\n" +
 	"\bchunk_no\x18\x02 \x01(\x05R\achunkNo\x12\x1d\n" +
 	"\n" +
-	"data_chunk\x18\x03 \x01(\fR\tdataChunk2\xec\x02\n" +
-	"\x06Keeper\x12K\n" +
-	"\x04Sync\x12\x1f.gokeeper.v1.keeper.SyncRequest\x1a .gokeeper.v1.keeper.SyncResponse0\x01\x12=\n" +
-	"\x03Add\x12\x1e.gokeeper.v1.keeper.AddRequest\x1a\x16.google.protobuf.Empty\x12I\n" +
-	"\x04List\x12\x1f.gokeeper.v1.keeper.ListRequest\x1a .gokeeper.v1.keeper.ListResponse\x12F\n" +
-	"\x03Get\x12\x1e.gokeeper.v1.keeper.GetRequest\x1a\x1f.gokeeper.v1.keeper.GetResponse\x12C\n" +
-	"\x06Delete\x12!.gokeeper.v1.keeper.DeleteRequest\x1a\x16.google.protobuf.EmptyB.Z,github.com/talx-hub/gophkeeper/api/v1/keeperb\beditionsp\xe8\a"
+	"data_chunk\x18\x03 \x01(\fR\tdataChunk2\xfc\x02\n" +
+	"\x06Keeper\x12O\n" +
+	"\x04Sync\x12!.gophkeeper.v1.keeper.SyncRequest\x1a\".gophkeeper.v1.keeper.SyncResponse0\x01\x12?\n" +
+	"\x03Add\x12 .gophkeeper.v1.keeper.AddRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
+	"\x04List\x12!.gophkeeper.v1.keeper.ListRequest\x1a\".gophkeeper.v1.keeper.ListResponse\x12J\n" +
+	"\x03Get\x12 .gophkeeper.v1.keeper.GetRequest\x1a!.gophkeeper.v1.keeper.GetResponse\x12E\n" +
+	"\x06Delete\x12#.gophkeeper.v1.keeper.DeleteRequest\x1a\x16.google.protobuf.EmptyB@Z>github.com/talx-hub/gophkeeper/internal/api/v1/keeper;keeperpbb\beditionsp\xe8\a"
 
 var (
 	file_proto_v1_keeper_keeper_proto_rawDescOnce sync.Once
@@ -850,49 +849,51 @@ func file_proto_v1_keeper_keeper_proto_rawDescGZIP() []byte {
 var file_proto_v1_keeper_keeper_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_v1_keeper_keeper_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_proto_v1_keeper_keeper_proto_goTypes = []any{
-	(SyncRequest_SyncMode)(0), // 0: gokeeper.v1.keeper.SyncRequest.SyncMode
-	(*SyncRequest)(nil),       // 1: gokeeper.v1.keeper.SyncRequest
-	(*SyncResponse)(nil),      // 2: gokeeper.v1.keeper.SyncResponse
-	(*AddRequest)(nil),        // 3: gokeeper.v1.keeper.AddRequest
-	(*GetRequest)(nil),        // 4: gokeeper.v1.keeper.GetRequest
-	(*GetResponse)(nil),       // 5: gokeeper.v1.keeper.GetResponse
-	(*DeleteRequest)(nil),     // 6: gokeeper.v1.keeper.DeleteRequest
-	(*ListRequest)(nil),       // 7: gokeeper.v1.keeper.ListRequest
-	(*ListResponse)(nil),      // 8: gokeeper.v1.keeper.ListResponse
-	(*Data)(nil),              // 9: gokeeper.v1.keeper.Data
-	(*Metadata)(nil),          // 10: gokeeper.v1.keeper.Metadata
-	(*AuthData)(nil),          // 11: gokeeper.v1.keeper.AuthData
-	(*CardInfo)(nil),          // 12: gokeeper.v1.keeper.CardInfo
-	(*Binary)(nil),            // 13: gokeeper.v1.keeper.Binary
-	(*emptypb.Empty)(nil),     // 14: google.protobuf.Empty
+	(SyncRequest_SyncMode)(0),     // 0: gophkeeper.v1.keeper.SyncRequest.SyncMode
+	(*SyncRequest)(nil),           // 1: gophkeeper.v1.keeper.SyncRequest
+	(*SyncResponse)(nil),          // 2: gophkeeper.v1.keeper.SyncResponse
+	(*AddRequest)(nil),            // 3: gophkeeper.v1.keeper.AddRequest
+	(*GetRequest)(nil),            // 4: gophkeeper.v1.keeper.GetRequest
+	(*GetResponse)(nil),           // 5: gophkeeper.v1.keeper.GetResponse
+	(*DeleteRequest)(nil),         // 6: gophkeeper.v1.keeper.DeleteRequest
+	(*ListRequest)(nil),           // 7: gophkeeper.v1.keeper.ListRequest
+	(*ListResponse)(nil),          // 8: gophkeeper.v1.keeper.ListResponse
+	(*EncryptedWithMetadata)(nil), // 9: gophkeeper.v1.keeper.EncryptedWithMetadata
+	(*UnencryptedData)(nil),       // 10: gophkeeper.v1.keeper.UnencryptedData
+	(*AuthData)(nil),              // 11: gophkeeper.v1.keeper.AuthData
+	(*CardInfo)(nil),              // 12: gophkeeper.v1.keeper.CardInfo
+	(*Binary)(nil),                // 13: gophkeeper.v1.keeper.Binary
+	(*common.Metadata)(nil),       // 14: gophkeeper.v1.common.Metadata
+	(*emptypb.Empty)(nil),         // 15: google.protobuf.Empty
 }
 var file_proto_v1_keeper_keeper_proto_depIdxs = []int32{
-	0,  // 0: gokeeper.v1.keeper.SyncRequest.sync_mode:type_name -> gokeeper.v1.keeper.SyncRequest.SyncMode
-	9,  // 1: gokeeper.v1.keeper.SyncResponse.data:type_name -> gokeeper.v1.keeper.Data
-	9,  // 2: gokeeper.v1.keeper.AddRequest.data:type_name -> gokeeper.v1.keeper.Data
-	10, // 3: gokeeper.v1.keeper.GetRequest.metadata:type_name -> gokeeper.v1.keeper.Metadata
-	9,  // 4: gokeeper.v1.keeper.GetResponse.data:type_name -> gokeeper.v1.keeper.Data
-	10, // 5: gokeeper.v1.keeper.DeleteRequest.metadata:type_name -> gokeeper.v1.keeper.Metadata
-	10, // 6: gokeeper.v1.keeper.ListResponse.metadata:type_name -> gokeeper.v1.keeper.Metadata
-	10, // 7: gokeeper.v1.keeper.Data.metadata:type_name -> gokeeper.v1.keeper.Metadata
-	11, // 8: gokeeper.v1.keeper.Data.auth_data:type_name -> gokeeper.v1.keeper.AuthData
-	12, // 9: gokeeper.v1.keeper.Data.card_info:type_name -> gokeeper.v1.keeper.CardInfo
-	13, // 10: gokeeper.v1.keeper.Data.binary:type_name -> gokeeper.v1.keeper.Binary
-	1,  // 11: gokeeper.v1.keeper.Keeper.Sync:input_type -> gokeeper.v1.keeper.SyncRequest
-	3,  // 12: gokeeper.v1.keeper.Keeper.Add:input_type -> gokeeper.v1.keeper.AddRequest
-	7,  // 13: gokeeper.v1.keeper.Keeper.List:input_type -> gokeeper.v1.keeper.ListRequest
-	4,  // 14: gokeeper.v1.keeper.Keeper.Get:input_type -> gokeeper.v1.keeper.GetRequest
-	6,  // 15: gokeeper.v1.keeper.Keeper.Delete:input_type -> gokeeper.v1.keeper.DeleteRequest
-	2,  // 16: gokeeper.v1.keeper.Keeper.Sync:output_type -> gokeeper.v1.keeper.SyncResponse
-	14, // 17: gokeeper.v1.keeper.Keeper.Add:output_type -> google.protobuf.Empty
-	8,  // 18: gokeeper.v1.keeper.Keeper.List:output_type -> gokeeper.v1.keeper.ListResponse
-	5,  // 19: gokeeper.v1.keeper.Keeper.Get:output_type -> gokeeper.v1.keeper.GetResponse
-	14, // 20: gokeeper.v1.keeper.Keeper.Delete:output_type -> google.protobuf.Empty
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	0,  // 0: gophkeeper.v1.keeper.SyncRequest.sync_mode:type_name -> gophkeeper.v1.keeper.SyncRequest.SyncMode
+	9,  // 1: gophkeeper.v1.keeper.SyncResponse.data:type_name -> gophkeeper.v1.keeper.EncryptedWithMetadata
+	9,  // 2: gophkeeper.v1.keeper.AddRequest.data:type_name -> gophkeeper.v1.keeper.EncryptedWithMetadata
+	14, // 3: gophkeeper.v1.keeper.GetRequest.metadata:type_name -> gophkeeper.v1.common.Metadata
+	9,  // 4: gophkeeper.v1.keeper.GetResponse.data:type_name -> gophkeeper.v1.keeper.EncryptedWithMetadata
+	14, // 5: gophkeeper.v1.keeper.DeleteRequest.metadata:type_name -> gophkeeper.v1.common.Metadata
+	14, // 6: gophkeeper.v1.keeper.ListResponse.metadata:type_name -> gophkeeper.v1.common.Metadata
+	14, // 7: gophkeeper.v1.keeper.EncryptedWithMetadata.metadata:type_name -> gophkeeper.v1.common.Metadata
+	14, // 8: gophkeeper.v1.keeper.UnencryptedData.metadata:type_name -> gophkeeper.v1.common.Metadata
+	11, // 9: gophkeeper.v1.keeper.UnencryptedData.auth_data:type_name -> gophkeeper.v1.keeper.AuthData
+	12, // 10: gophkeeper.v1.keeper.UnencryptedData.card_info:type_name -> gophkeeper.v1.keeper.CardInfo
+	13, // 11: gophkeeper.v1.keeper.UnencryptedData.binary:type_name -> gophkeeper.v1.keeper.Binary
+	1,  // 12: gophkeeper.v1.keeper.Keeper.Sync:input_type -> gophkeeper.v1.keeper.SyncRequest
+	3,  // 13: gophkeeper.v1.keeper.Keeper.Add:input_type -> gophkeeper.v1.keeper.AddRequest
+	7,  // 14: gophkeeper.v1.keeper.Keeper.List:input_type -> gophkeeper.v1.keeper.ListRequest
+	4,  // 15: gophkeeper.v1.keeper.Keeper.Get:input_type -> gophkeeper.v1.keeper.GetRequest
+	6,  // 16: gophkeeper.v1.keeper.Keeper.Delete:input_type -> gophkeeper.v1.keeper.DeleteRequest
+	2,  // 17: gophkeeper.v1.keeper.Keeper.Sync:output_type -> gophkeeper.v1.keeper.SyncResponse
+	15, // 18: gophkeeper.v1.keeper.Keeper.Add:output_type -> google.protobuf.Empty
+	8,  // 19: gophkeeper.v1.keeper.Keeper.List:output_type -> gophkeeper.v1.keeper.ListResponse
+	5,  // 20: gophkeeper.v1.keeper.Keeper.Get:output_type -> gophkeeper.v1.keeper.GetResponse
+	15, // 21: gophkeeper.v1.keeper.Keeper.Delete:output_type -> google.protobuf.Empty
+	17, // [17:22] is the sub-list for method output_type
+	12, // [12:17] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_v1_keeper_keeper_proto_init() }
@@ -900,10 +901,10 @@ func file_proto_v1_keeper_keeper_proto_init() {
 	if File_proto_v1_keeper_keeper_proto != nil {
 		return
 	}
-	file_proto_v1_keeper_keeper_proto_msgTypes[8].OneofWrappers = []any{
-		(*Data_AuthData)(nil),
-		(*Data_CardInfo)(nil),
-		(*Data_Binary)(nil),
+	file_proto_v1_keeper_keeper_proto_msgTypes[9].OneofWrappers = []any{
+		(*UnencryptedData_AuthData)(nil),
+		(*UnencryptedData_CardInfo)(nil),
+		(*UnencryptedData_Binary)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

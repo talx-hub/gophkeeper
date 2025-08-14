@@ -1,6 +1,6 @@
 edition = "2023";
 
-option go_package = "github.com/talx-hub/gophkeeper/api/v1/health";
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/health;healthpb";
 package gophkeeper.v1.health;
 
 import "google/protobuf/empty.proto";

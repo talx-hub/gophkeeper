@@ -7,7 +7,7 @@ clean-gen-proto:
 	find proto -type f ! -name "*.proto" -delete
 
 .PHONY: generate
-generate: auth.proto health.proto keeper.proto
+generate: auth.proto health.proto keeper.proto agent.proto
 
 auth.proto:
 	protoc \
@@ -25,13 +25,25 @@ health.proto:
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/health/health.proto
 
-keeper.proto:
+common.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/common.proto
+
+keeper.proto: common.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
 		--go-grpc_out=. \
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/keeper/keeper.proto
+
+agent.proto: common.proto
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/agent/agent.proto
 
 .PHONY : lint
 lint:

@@ -4,7 +4,7 @@
 // 	protoc        v6.32.0--rc1
 // source: proto/v1/health/health.proto
 
-package health
+package healthpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -27,7 +27,7 @@ const file_proto_v1_health_health_proto_rawDesc = "" +
 	"\n" +
 	"\x1cproto/v1/health/health.proto\x12\x14gophkeeper.v1.health\x1a\x1bgoogle/protobuf/empty.proto2G\n" +
 	"\rHealthService\x126\n" +
-	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.EmptyB.Z,github.com/talx-hub/gophkeeper/api/v1/healthb\beditionsp\xe8\a"
+	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.EmptyB@Z>github.com/talx-hub/gophkeeper/internal/api/v1/health;healthpbb\beditionsp\xe8\a"
 
 var file_proto_v1_health_health_proto_goTypes = []any{
 	(*emptypb.Empty)(nil), // 0: google.protobuf.Empty

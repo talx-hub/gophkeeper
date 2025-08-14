@@ -22,7 +22,7 @@ func TestNewServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address)
+			s := NewServer(tt.address, nil)
 			assert.NotNil(t, s)
 		})
 	}
@@ -42,7 +42,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address)
+			s := NewServer(tt.address, nil)
 
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
@@ -85,7 +85,7 @@ func TestServer_Stop(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer("localhost:")
+			s := NewServer("localhost:", nil)
 			require.NotNil(t, s)
 
 			wg := &sync.WaitGroup{}

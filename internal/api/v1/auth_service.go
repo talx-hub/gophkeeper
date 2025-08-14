@@ -7,22 +7,22 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/talx-hub/gophkeeper/proto/v1/auth"
+	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 )
 
 type AuthService struct {
-	auth.UnimplementedAuthServiceServer
+	authpb.UnimplementedAuthServiceServer
 }
 
-func (s *AuthService) Register(context.Context, *auth.RegisterRequest,
-) (*auth.RegisterResponse, error) {
+func (s *AuthService) Register(context.Context, *authpb.RegisterRequest,
+) (*authpb.RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (s *AuthService) Login(context.Context, *auth.LoginRequest,
-) (*auth.LoginResponse, error) {
+func (s *AuthService) Login(context.Context, *authpb.LoginRequest,
+) (*authpb.LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (s *AuthService) Logout(context.Context, *auth.LogoutRequest,
+func (s *AuthService) Logout(context.Context, *authpb.LogoutRequest,
 ) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
