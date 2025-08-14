@@ -7,8 +7,9 @@ clean-gen-proto:
 	find proto -type f ! -name "*.proto" -delete
 
 .PHONY: generate
-generate: auth.proto health.proto keeper.proto agent.proto
+generate: auth.proto health.proto keeper.proto agent.proto mocks
 
+.PHONY: auth.proto
 auth.proto:
 	protoc \
 		--go_out=. \
@@ -17,6 +18,7 @@ auth.proto:
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/auth/auth.proto
 
+.PHONY: health.proto
 health.proto:
 	protoc \
 		--go_out=. \
@@ -25,12 +27,14 @@ health.proto:
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/health/health.proto
 
+.PHONY: common.proto
 common.proto:
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
 		proto/v1/common.proto
 
+.PHONY: keeper.proto
 keeper.proto: common.proto
 	protoc \
 		--go_out=. \
@@ -39,11 +43,19 @@ keeper.proto: common.proto
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/keeper/keeper.proto
 
+.PHONY: auth.proto
 agent.proto: common.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
 		proto/v1/agent/agent.proto
+
+.PHONY: mocks
+mocks:
+	docker run --rm \
+		-v $(realpath .):/src \
+		-w /src \
+		vektra/mockery:latest
 
 .PHONY : lint
 lint:
