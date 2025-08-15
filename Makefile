@@ -70,4 +70,11 @@ _golangci-lint-format-report:
 .PHONY : test
 test:
 	go test ./... -tags integration_tests -race -coverprofile=cover.out -covermode=atomic
-	grep -v "/pkg/pgcontainer/" cover.out > cover.filtered.out
+	grep -v \
+		-e "/mocks/" \
+		-e "/proto/" \
+		cover.out > cover.filtered.out
+
+.PHONY : check-coverage
+check-coverage:
+	go tool cover -html cover.filtered.out
