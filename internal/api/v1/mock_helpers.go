@@ -16,6 +16,8 @@ type repoMockBuilder struct {
 }
 
 func newRepoMock(t *testing.T) *repoMockBuilder {
+	t.Helper()
+
 	r := mocks.NewMockUserRepository(t)
 	t.Cleanup(func() {
 		r.AssertExpectations(t)
@@ -105,6 +107,8 @@ type sessionMockBuilder struct {
 }
 
 func newSessionMock(t *testing.T) *sessionMockBuilder {
+	t.Helper()
+
 	s := mocks.NewMockSessionService(t)
 	t.Cleanup(func() {
 		s.AssertExpectations(t)

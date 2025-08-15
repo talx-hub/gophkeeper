@@ -49,20 +49,35 @@ func TestAuthService_Login(t *testing.T) {
 			wantCode: codes.Unauthenticated,
 		},
 		{
-			name:     "wrong password → Unauthenticated",
-			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr("dummy-user-id"), Password: strPtr("wrong")}},
+			name: "wrong password → Unauthenticated",
+			req: &authpb.LoginRequest{
+				AuthData: &authpb.AuthData{
+					Login:    strPtr("dummy-user-id"),
+					Password: strPtr("wrong"),
+				},
+			},
 			wantErr:  true,
 			wantCode: codes.Unauthenticated,
 		},
 		{
-			name:     "create session failed → Internal",
-			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr("session-fail"), Password: strPtr("very-long-dummy-bytes")}},
+			name: "create session failed → Internal",
+			req: &authpb.LoginRequest{
+				AuthData: &authpb.AuthData{
+					Login:    strPtr("session-fail"),
+					Password: strPtr("very-long-dummy-bytes"),
+				},
+			},
 			wantErr:  true,
 			wantCode: codes.Internal,
 		},
 		{
-			name:     "success",
-			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr("dummy-user-id"), Password: strPtr("very-long-dummy-bytes")}},
+			name: "success",
+			req: &authpb.LoginRequest{
+				AuthData: &authpb.AuthData{
+					Login:    strPtr("dummy-user-id"),
+					Password: strPtr("very-long-dummy-bytes"),
+				},
+			},
 			wantCode: codes.OK,
 		},
 	}

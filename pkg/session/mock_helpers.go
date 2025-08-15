@@ -17,6 +17,8 @@ type storageMockBuilder struct {
 }
 
 func newStorageMock(t *testing.T) *storageMockBuilder {
+	t.Helper()
+
 	s := mocks.NewMockRefreshTokenStorage(t)
 	t.Cleanup(func() {
 		s.AssertExpectations(t)
