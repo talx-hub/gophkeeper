@@ -13,18 +13,18 @@ import (
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 )
 
-type UserRepository interface {
-	Create(ctx context.Context, u *model.User) (model.UserID, error)
-	FindByLogin(ctx context.Context, login string) (model.User, error)
-	FindByID(ctx context.Context, uuid model.UserID) (model.User, error)
-	Delete(ctx context.Context, uuid model.UserID) error
-}
-
 type SessionService interface {
 	CreateSession(ctx context.Context, userID model.UserID) (accessToken string, refreshToken string, err error)
 	RefreshSession(ctx context.Context, refreshToken string) (newAccessToken string, newRefreshToken string, err error)
 	ValidateAccessToken(ctx context.Context, token string) (userID model.UserID, err error)
 	RevokeSession(ctx context.Context, refreshToken string) error
+}
+
+type UserRepository interface {
+	Create(ctx context.Context, u *model.User) (model.UserID, error)
+	FindByLogin(ctx context.Context, login string) (model.User, error)
+	FindByID(ctx context.Context, uuid model.UserID) (model.User, error)
+	Delete(ctx context.Context, uuid model.UserID) error
 }
 
 type AuthService struct {
@@ -41,46 +41,6 @@ func NewAuthService(
 		repo:           repo,
 		sessionService: session,
 	}
-}
-
-func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
-) (*authpb.RegisterResponse, error) {
-	userData := r.GetAuthData()
-	if userData == nil || (userData.Login == nil || userData.Password == nil) {
-		return nil, status.Errorf(codes.InvalidArgument, "request validation failed: the registration data is nil")
-	}
-
-	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
-	defer cancel1()
-	if _, err := s.repo.FindByLogin(ctx1, userData.GetLogin()); err == nil {
-		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
-	} else if !errors.Is(err, model.ErrNotFound) {
-		return nil, status.Errorf(codes.Internal, "failed to check login existance: %v", err)
-	}
-
-	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
-	defer cancel2()
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
-	}
-	userID, err := s.repo.Create(ctx2, &model.User{
-		Login:        userData.GetLogin(),
-		PasswordHash: passwordHash,
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
-	}
-
-	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
-	resp := &authpb.RegisterResponse{
-		Credentials: &authpb.Credentials{
-			AccessToken:  &authpb.AccessToken{AccessToken: &access},
-			RefreshToken: &authpb.RefreshToken{RefreshToken: &refresh},
-		},
-	}
-
-	return resp, nil
 }
 
 func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
@@ -122,4 +82,44 @@ func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
+) (*authpb.RegisterResponse, error) {
+	userData := r.GetAuthData()
+	if userData == nil || (userData.Login == nil || userData.Password == nil) {
+		return nil, status.Errorf(codes.InvalidArgument, "request validation failed: the registration data is nil")
+	}
+
+	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
+	defer cancel1()
+	if _, err := s.repo.FindByLogin(ctx1, userData.GetLogin()); err == nil {
+		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
+	} else if !errors.Is(err, model.ErrNotFound) {
+		return nil, status.Errorf(codes.Internal, "failed to check login existance: %v", err)
+	}
+
+	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
+	defer cancel2()
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
+	}
+	userID, err := s.repo.Create(ctx2, &model.User{
+		Login:        userData.GetLogin(),
+		PasswordHash: passwordHash,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
+	}
+
+	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
+	resp := &authpb.RegisterResponse{
+		Credentials: &authpb.Credentials{
+			AccessToken:  &authpb.AccessToken{AccessToken: &access},
+			RefreshToken: &authpb.RefreshToken{RefreshToken: &refresh},
+		},
+	}
+
+	return resp, nil
 }
