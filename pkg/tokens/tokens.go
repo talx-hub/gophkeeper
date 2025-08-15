@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"runtime/debug"
@@ -13,18 +14,12 @@ import (
 const AccessTokenExpire = 15 * time.Minute
 const RefreshTokenExpireDays = 15
 
-var ErrTokenExpired = errors.New("token expired")
-
-type Claims struct {
-	jwt.RegisteredClaims
-	UserID string
-}
-
 type Generator struct {
 	secret []byte
 }
 
-func (g *Generator) GenerateRefreshToken() (token string, expiresAt time.Time, err error) {
+func (g *Generator) GenerateRefreshToken(_ context.Context,
+) (token string, expiresAt time.Time, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("uuid generation failed: %v\n%s", r, debug.Stack())
@@ -37,13 +32,13 @@ func (g *Generator) GenerateRefreshToken() (token string, expiresAt time.Time, e
 		nil
 }
 
-func (g *Generator) GenerateAccessToken(userID string) (string, error) {
+func (g *Generator) GenerateAccessToken(_ context.Context, userID string) (string, error) {
+	iat := time.Now().UTC()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		Claims{
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(AccessTokenExpire)),
-			},
-			UserID: userID,
+		jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(iat),
+			ExpiresAt: jwt.NewNumericDate(iat.Add(AccessTokenExpire)),
+			Subject:   userID,
 		},
 	)
 	tokenString, err := token.SignedString(g.secret)
@@ -53,20 +48,30 @@ func (g *Generator) GenerateAccessToken(userID string) (string, error) {
 	return tokenString, nil
 }
 
-func (g *Generator) CheckAccessToken(token string) (string, error) {
-	claims := &Claims{}
-	_, err := jwt.ParseWithClaims(
+func (g *Generator) CheckAccessToken(_ context.Context, token string) (string, error) {
+	const jwtLeeway = 10 * time.Second
+
+	claims := &jwt.RegisteredClaims{}
+	t, err := jwt.ParseWithClaims(
 		token, claims,
 		func(token *jwt.Token) (interface{}, error) {
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, errors.New("wrong signing algorithm")
+			}
 			return g.secret, nil
-		})
+		},
+		jwt.WithLeeway(jwtLeeway),
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+	)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse token %w", err)
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return "", jwt.ErrTokenExpired
+		}
+		return "", fmt.Errorf("invalid token: %w", err)
 	}
-	tokenExpired := claims.ExpiresAt.Before(time.Now().UTC())
-	if tokenExpired {
-		return "", ErrTokenExpired
+	if !t.Valid {
+		return "", errors.New("invalid token")
 	}
 
-	return claims.UserID, nil
+	return claims.Subject, nil
 }
