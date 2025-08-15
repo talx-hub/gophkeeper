@@ -8,3 +8,4 @@ packages:
   github.com/talx-hub/gophkeeper/internal/api/v1:
     interfaces:
         UserRepository:
+        SessionService:

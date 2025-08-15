@@ -60,7 +60,11 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 		return nil, status.Errorf(codes.Unauthenticated, "password is wrong: %v", err)
 	}
 
-	access, refresh, err := s.sessionService.CreateSession(ctx, model.UserID(user.UUID))
+	access, refresh, err := s.sessionService.CreateSession(ctx, user.UUID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
+	}
+
 	resp := &authpb.LoginResponse{
 		Credentials: &authpb.Credentials{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
@@ -114,6 +118,9 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	}
 
 	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
+	}
 	resp := &authpb.RegisterResponse{
 		Credentials: &authpb.Credentials{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
