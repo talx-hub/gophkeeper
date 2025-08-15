@@ -14,16 +14,16 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, u *model.User) (string, error)
+	Create(ctx context.Context, u *model.User) (model.UserID, error)
 	FindByLogin(ctx context.Context, login string) (model.User, error)
-	FindByID(ctx context.Context, uuid string) (model.User, error)
-	Delete(ctx context.Context, uuid string) error
+	FindByID(ctx context.Context, uuid model.UserID) (model.User, error)
+	Delete(ctx context.Context, uuid model.UserID) error
 }
 
 type SessionService interface {
-	CreateSession(ctx context.Context, userID string) (accessToken string, refreshToken string, err error)
+	CreateSession(ctx context.Context, userID model.UserID) (accessToken string, refreshToken string, err error)
 	RefreshSession(ctx context.Context, refreshToken string) (newAccessToken string, newRefreshToken string, err error)
-	ValidateAccessToken(token string) (userID string, err error)
+	ValidateAccessToken(ctx context.Context, token string) (userID model.UserID, err error)
 	RevokeSession(ctx context.Context, refreshToken string) error
 }
 
@@ -33,9 +33,13 @@ type AuthService struct {
 	sessionService SessionService
 }
 
-func NewAuthService(repo UserRepository) *AuthService {
+func NewAuthService(
+	repo UserRepository,
+	session SessionService,
+) *AuthService {
 	return &AuthService{
-		repo: repo,
+		repo:           repo,
+		sessionService: session,
 	}
 }
 
@@ -96,7 +100,7 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 		return nil, status.Errorf(codes.Unauthenticated, "password is wrong: %v", err)
 	}
 
-	access, refresh, err := s.sessionService.CreateSession(ctx, user.UUID)
+	access, refresh, err := s.sessionService.CreateSession(ctx, model.UserID(user.UUID))
 	resp := &authpb.LoginResponse{
 		Credentials: &authpb.Credentials{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},

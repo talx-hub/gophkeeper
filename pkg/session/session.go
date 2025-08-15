@@ -10,26 +10,35 @@ import (
 )
 
 type RefreshTokenStorage interface {
-	Save(ctx context.Context, tokenID, userID string, expiresAt time.Time) error
+	Save(ctx context.Context, tokenID string, userID model.UserID, expiresAt time.Time) error
 	Validate(ctx context.Context, tokenID string) error
 	Delete(ctx context.Context, tokenID string) error
 }
 
 type Manager struct {
-	storage   RefreshTokenStorage
-	generator *tokens.Generator
+	storage RefreshTokenStorage
+	issuer  *tokens.Generator
 }
 
-func (m *Manager) CreateSession(ctx context.Context, userID string,
+func NewManager(storage RefreshTokenStorage, issuer *tokens.Generator) *Manager {
+	return &Manager{
+		storage: storage,
+		issuer:  issuer,
+	}
+}
+
+func (m *Manager) CreateSession(ctx context.Context, userID model.UserID,
 ) (string, string, error) {
-	accessToken, err := m.generator.GenerateAccessToken(userID)
+	accessToken, err := m.issuer.GenerateAccessToken(ctx, userID)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
-	refreshToken, expiresAt, err := m.generator.GenerateRefreshToken()
+
+	refreshToken, expiresAt, err := m.issuer.GenerateRefreshToken(ctx)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
 	}
+
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
 	err = m.storage.Save(ctxTO, refreshToken, userID, expiresAt)
@@ -45,8 +54,8 @@ func (m *Manager) RefreshSession(ctx context.Context, refreshToken string,
 	return "", "", nil
 }
 
-func (m *Manager) ValidateAccessToken(token string) (string, error) {
-	userID, err := m.generator.CheckAccessToken(token)
+func (m *Manager) ValidateAccessToken(ctx context.Context, token string) (string, error) {
+	userID, err := m.issuer.CheckAccessToken(ctx, token)
 	if err != nil {
 		//nolint:wrapcheck // the ValidateAccessToken is just proxy for tokens.CheckAccessToken
 		return "", err

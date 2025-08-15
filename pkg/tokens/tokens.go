@@ -9,6 +9,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
+	"github.com/talx-hub/gophkeeper/internal/model"
 )
 
 const AccessTokenExpire = 15 * time.Minute
@@ -16,6 +18,12 @@ const RefreshTokenExpireDays = 15
 
 type Generator struct {
 	secret []byte
+}
+
+func NewGenerator(secret []byte) *Generator {
+	return &Generator{
+		secret: secret,
+	}
 }
 
 func (g *Generator) GenerateRefreshToken(_ context.Context,
@@ -32,13 +40,13 @@ func (g *Generator) GenerateRefreshToken(_ context.Context,
 		nil
 }
 
-func (g *Generator) GenerateAccessToken(_ context.Context, userID string) (string, error) {
+func (g *Generator) GenerateAccessToken(_ context.Context, userID model.UserID) (string, error) {
 	iat := time.Now().UTC()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(iat),
 			ExpiresAt: jwt.NewNumericDate(iat.Add(AccessTokenExpire)),
-			Subject:   userID,
+			Subject:   string(userID),
 		},
 	)
 	tokenString, err := token.SignedString(g.secret)
