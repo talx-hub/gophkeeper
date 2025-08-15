@@ -9,3 +9,7 @@ packages:
     interfaces:
         UserRepository:
         SessionService:
+  github.com/talx-hub/gophkeeper/pkg/session:
+    interfaces:
+        RefreshTokenStorage:
+
