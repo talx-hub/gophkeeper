@@ -49,9 +49,20 @@ func (m *Manager) CreateSession(ctx context.Context, userID model.UserID,
 	return accessToken, refreshToken, nil
 }
 
-func (m *Manager) RefreshSession(ctx context.Context, refreshToken string,
+func (m *Manager) RefreshSession(ctx context.Context, userID model.UserID, oldRefreshToken string,
 ) (string, string, error) {
-	return "", "", nil
+	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
+	defer cancel()
+	if err := m.storage.Delete(ctxTO, oldRefreshToken); err != nil {
+		return "", "", fmt.Errorf("failed to revoke old refresh token: %w", err)
+	}
+
+	accessToken, refreshToken, err := m.CreateSession(ctx, userID)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create new session: %w", err)
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (m *Manager) ValidateAccessToken(ctx context.Context, token string) (string, error) {
