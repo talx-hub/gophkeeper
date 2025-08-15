@@ -33,6 +33,7 @@ common.proto:
 		--go_out=. \
 		--go_opt=paths=source_relative \
 		proto/v1/common.proto
+	mv ./proto/v1/common.pb.go ./internal/model/common/
 
 .PHONY: keeper.proto
 keeper.proto: common.proto

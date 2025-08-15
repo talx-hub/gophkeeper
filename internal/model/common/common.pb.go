@@ -167,7 +167,7 @@ const file_proto_v1_common_proto_rawDesc = "" +
 	"\x15DATA_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eDATA_TYPE_AUTH\x10\x01\x12\x12\n" +
 	"\x0eDATA_TYPE_CARD\x10\x02\x12\x14\n" +
-	"\x10DATA_TYPE_BINARY\x10\x03B6Z4github.com/talx-hub/gophkeeper/internal/model/commonb\beditionsp\xe8\a"
+	"\x10DATA_TYPE_BINARY\x10\x03B=Z;github.com/talx-hub/gophkeeper/internal/model/common;commonb\beditionsp\xe8\a"
 
 var (
 	file_proto_v1_common_proto_rawDescOnce sync.Once
