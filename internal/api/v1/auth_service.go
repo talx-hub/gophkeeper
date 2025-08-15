@@ -10,21 +10,27 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/pkg/session"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, u *model.User) error
-	FindByLogin(ctx context.Context, loginHash string) (model.User, error)
+	Create(ctx context.Context, u *model.User) (string, error)
+	FindByLogin(ctx context.Context, login string) (model.User, error)
 	FindByID(ctx context.Context, uuid string) (model.User, error)
 	Delete(ctx context.Context, uuid string) error
+}
+
+type SessionService interface {
+	CreateSession(ctx context.Context, userID string) (accessToken string, refreshToken string, err error)
+	RefreshSession(ctx context.Context, refreshToken string) (newAccessToken string, newRefreshToken string, err error)
+	ValidateAccessToken(token string) (userID string, err error)
+	RevokeSession(ctx context.Context, refreshToken string) error
 }
 
 type AuthService struct {
 	authpb.UnimplementedAuthServiceServer
 	repo           UserRepository
-	sessionManager *session.Manager
+	sessionService SessionService
 }
 
 func NewAuthService(repo UserRepository) *AuthService {
@@ -49,19 +55,20 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	}
 
 	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
-	cancel2()
+	defer cancel2()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
 	}
-	if err := s.repo.Create(ctx2, &model.User{
+	userID, err := s.repo.Create(ctx2, &model.User{
 		Login:        userData.GetLogin(),
 		PasswordHash: passwordHash,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
-	access, refresh, err := s.sessionManager.GenerateTokens(ctx)
+	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
 	resp := &authpb.RegisterResponse{
 		Credentials: &authpb.Credentials{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
@@ -83,13 +90,13 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 	defer cancel1()
 	user, err := s.repo.FindByLogin(ctx1, userData.GetLogin())
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "login or password is wrong")
+		return nil, status.Errorf(codes.Unauthenticated, "failed to find user by login: %v", err)
 	}
 	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(userData.GetPassword())); err != nil {
-		return nil, status.Error(codes.Unauthenticated, "login or password is wrong")
+		return nil, status.Errorf(codes.Unauthenticated, "password is wrong: %v", err)
 	}
 
-	access, refresh, err := s.sessionManager.GenerateTokens(ctx)
+	access, refresh, err := s.sessionService.CreateSession(ctx, user.UUID)
 	resp := &authpb.LoginResponse{
 		Credentials: &authpb.Credentials{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
@@ -106,7 +113,7 @@ func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 	if refreshToken == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "request validation failed: the refresh uuid is nil")
 	}
-	if err := s.sessionManager.Logout(ctx, refreshToken.GetRefreshToken()); err != nil {
+	if err := s.sessionService.RevokeSession(ctx, refreshToken.GetRefreshToken()); err != nil {
 		return nil, status.Errorf(codes.Internal, "logout failed: %v", err)
 	}
 
