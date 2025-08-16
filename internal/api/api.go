@@ -48,7 +48,6 @@ func (s *Server) Start() error {
 			"failed to start listening on address %s: %w", s.address, err)
 	}
 
-	healthpb.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
 	// TODO: fill repo
 	// TODO: fill secret from cfg
 	authpb.RegisterAuthServiceServer(s.grpcServer,
@@ -56,6 +55,12 @@ func (s *Server) Start() error {
 			s.log,
 			nil,
 			session.NewManager(nil, tokens.NewGenerator([]byte("TODO: secret"))),
+		))
+
+	healthpb.RegisterHealthServiceServer(s.grpcServer,
+		v1.NewHealthService(
+			s.log,
+			nil,
 		))
 
 	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
