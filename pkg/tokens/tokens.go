@@ -56,7 +56,7 @@ func (g *Generator) GenerateAccessToken(_ context.Context, userID model.UserID) 
 	return tokenString, nil
 }
 
-func (g *Generator) CheckAccessToken(_ context.Context, token string) (string, error) {
+func (g *Generator) CheckAccessToken(_ context.Context, token string) (model.UserID, error) {
 	const jwtLeeway = 10 * time.Second
 
 	claims := &jwt.RegisteredClaims{}
@@ -81,5 +81,5 @@ func (g *Generator) CheckAccessToken(_ context.Context, token string) (string, e
 		return "", errors.New("invalid token")
 	}
 
-	return claims.Subject, nil
+	return model.UserID(claims.Subject), nil
 }

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 	"strings"
 	"testing"
@@ -298,7 +299,7 @@ func TestNewAuthService(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			svc := NewAuthService(tt.args.repo, tt.args.session)
+			svc := NewAuthService(slog.Default(), tt.args.repo, tt.args.session)
 			if svc == nil {
 				t.Fatalf("NewAuthService() returned nil")
 			}

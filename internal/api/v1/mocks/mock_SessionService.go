@@ -111,8 +111,8 @@ func (_c *MockSessionService_CreateSession_Call) RunAndReturn(run func(ctx conte
 }
 
 // RefreshSession provides a mock function for the type MockSessionService
-func (_mock *MockSessionService) RefreshSession(ctx context.Context, refreshToken string) (string, string, error) {
-	ret := _mock.Called(ctx, refreshToken)
+func (_mock *MockSessionService) RefreshSession(ctx context.Context, userID model.UserID, refreshToken string) (string, string, error) {
+	ret := _mock.Called(ctx, userID, refreshToken)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RefreshSession")
@@ -121,21 +121,21 @@ func (_mock *MockSessionService) RefreshSession(ctx context.Context, refreshToke
 	var r0 string
 	var r1 string
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (string, string, error)); ok {
-		return returnFunc(ctx, refreshToken)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, string) (string, string, error)); ok {
+		return returnFunc(ctx, userID, refreshToken)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = returnFunc(ctx, refreshToken)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, string) string); ok {
+		r0 = returnFunc(ctx, userID, refreshToken)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) string); ok {
-		r1 = returnFunc(ctx, refreshToken)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.UserID, string) string); ok {
+		r1 = returnFunc(ctx, userID, refreshToken)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, string) error); ok {
-		r2 = returnFunc(ctx, refreshToken)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, model.UserID, string) error); ok {
+		r2 = returnFunc(ctx, userID, refreshToken)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -149,24 +149,30 @@ type MockSessionService_RefreshSession_Call struct {
 
 // RefreshSession is a helper method to define mock.On call
 //   - ctx context.Context
+//   - userID model.UserID
 //   - refreshToken string
-func (_e *MockSessionService_Expecter) RefreshSession(ctx interface{}, refreshToken interface{}) *MockSessionService_RefreshSession_Call {
-	return &MockSessionService_RefreshSession_Call{Call: _e.mock.On("RefreshSession", ctx, refreshToken)}
+func (_e *MockSessionService_Expecter) RefreshSession(ctx interface{}, userID interface{}, refreshToken interface{}) *MockSessionService_RefreshSession_Call {
+	return &MockSessionService_RefreshSession_Call{Call: _e.mock.On("RefreshSession", ctx, userID, refreshToken)}
 }
 
-func (_c *MockSessionService_RefreshSession_Call) Run(run func(ctx context.Context, refreshToken string)) *MockSessionService_RefreshSession_Call {
+func (_c *MockSessionService_RefreshSession_Call) Run(run func(ctx context.Context, userID model.UserID, refreshToken string)) *MockSessionService_RefreshSession_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 model.UserID
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(model.UserID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -177,7 +183,7 @@ func (_c *MockSessionService_RefreshSession_Call) Return(newAccessToken string, 
 	return _c
 }
 
-func (_c *MockSessionService_RefreshSession_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) (string, string, error)) *MockSessionService_RefreshSession_Call {
+func (_c *MockSessionService_RefreshSession_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID, refreshToken string) (string, string, error)) *MockSessionService_RefreshSession_Call {
 	_c.Call.Return(run)
 	return _c
 }

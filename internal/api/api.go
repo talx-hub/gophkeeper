@@ -10,6 +10,8 @@ import (
 
 	v1 "github.com/talx-hub/gophkeeper/internal/api/v1"
 	"github.com/talx-hub/gophkeeper/internal/model/common"
+	"github.com/talx-hub/gophkeeper/pkg/session"
+	"github.com/talx-hub/gophkeeper/pkg/tokens"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 	healthpb "github.com/talx-hub/gophkeeper/proto/v1/health"
 	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
@@ -27,15 +29,14 @@ type Server struct {
 	log        *slog.Logger
 	storage    Storage
 	// cfg *server.Builder
-	// storage Storage
-	address string
+	address string // TODO: fill address from cfg
 }
 
-func NewServer(address string, storage Storage) *Server {
+func NewServer(address string, log *slog.Logger, storage Storage) *Server {
 	return &Server{
 		address:    address,
 		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
-		log:        slog.Default(),
+		log:        log,
 		storage:    storage,
 	}
 }
@@ -47,8 +48,16 @@ func (s *Server) Start() error {
 			"failed to start listening on address %s: %w", s.address, err)
 	}
 
-	authpb.RegisterAuthServiceServer(s.grpcServer, &v1.AuthService{})
 	healthpb.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
+	// TODO: fill repo
+	// TODO: fill secret from cfg
+	authpb.RegisterAuthServiceServer(s.grpcServer,
+		v1.NewAuthService(
+			s.log,
+			nil,
+			session.NewManager(nil, tokens.NewGenerator([]byte("TODO: secret"))),
+		))
+
 	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
 
 	//nolint:wrapcheck // error could be nil

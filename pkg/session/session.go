@@ -65,7 +65,7 @@ func (m *Manager) RefreshSession(ctx context.Context, userID model.UserID, oldRe
 	return accessToken, refreshToken, nil
 }
 
-func (m *Manager) ValidateAccessToken(ctx context.Context, token string) (string, error) {
+func (m *Manager) ValidateAccessToken(ctx context.Context, token string) (model.UserID, error) {
 	userID, err := m.issuer.CheckAccessToken(ctx, token)
 	if err != nil {
 		//nolint:wrapcheck // the ValidateAccessToken is just proxy for tokens.CheckAccessToken
