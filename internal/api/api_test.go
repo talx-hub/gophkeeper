@@ -46,20 +46,17 @@ func TestServer_Start(t *testing.T) {
 
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
-			go func() {
+			time.AfterFunc(startServerTO, func() {
 				defer wg.Done()
-				time.Sleep(startServerTO)
 
 				err := s.Stop(context.Background())
-				if tt.wantErr {
-					assert.Error(t, err)
-				} else {
-					assert.NoError(t, err)
-				}
-			}()
-
-			if err := s.Start(); (err != nil) != tt.wantErr {
-				t.Errorf("Start() error = %v, wantErr %v", err, tt.wantErr)
+				require.NoError(t, err)
+			})
+			err := s.Start()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 			wg.Wait()
 		})

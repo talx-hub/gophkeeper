@@ -2,10 +2,9 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log/slog"
 	"net"
-	"sync"
 
 	"google.golang.org/grpc"
 
@@ -25,32 +24,29 @@ type Storage interface {
 
 type Server struct {
 	grpcServer *grpc.Server
+	log        *slog.Logger
 	storage    Storage
 	// cfg *server.Builder
 	// storage Storage
-	// log *slog.Logger
 	address string
-	m       sync.Mutex
 }
 
 func NewServer(address string, storage Storage) *Server {
 	return &Server{
-		address: address,
-		storage: storage,
+		address:    address,
+		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
+		log:        slog.Default(),
+		storage:    storage,
 	}
 }
 
 func (s *Server) Start() error {
 	lis, err := net.Listen("tcp", s.address)
 	if err != nil {
-		errMsg := "failed to start listening " + s.address
-		// TODO: s.log.Fatal().Err(err).Msg(errMsg)
-		return fmt.Errorf("%s: %w", errMsg, err)
+		return fmt.Errorf(
+			"failed to start listening on address %s: %w", s.address, err)
 	}
-	s.m.Lock()
-	s.grpcServer = grpc.NewServer(
-		grpc.ChainUnaryInterceptor())
-	s.m.Unlock()
+
 	authpb.RegisterAuthServiceServer(s.grpcServer, &v1.AuthService{})
 	healthpb.RegisterHealthServiceServer(s.grpcServer, &v1.HealthService{})
 	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
@@ -60,13 +56,6 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	s.m.Lock()
-	if s.grpcServer == nil {
-		s.m.Unlock()
-		return errors.New("trying to close nil gRPC-server")
-	}
-	s.m.Unlock()
-
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
