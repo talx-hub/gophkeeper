@@ -7,7 +7,8 @@
 package agent
 
 import (
-	common "github.com/talx-hub/gophkeeper/internal/model/common"
+	common "github.com/talx-hub/gophkeeper/internal/api/v1/common"
+	metadata "github.com/talx-hub/gophkeeper/internal/api/v1/metadata"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -26,12 +27,12 @@ const (
 // Каждое сообщение содержит метаданные и один из возможных типов данных.
 type UnencryptedData struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Metadata *common.Metadata       `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	Metadata *metadata.Metadata     `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	// Types that are valid to be assigned to Type:
 	//
 	//	*UnencryptedData_AuthData
 	//	*UnencryptedData_CardInfo
-	//	*UnencryptedData_Binary
+	//	*UnencryptedData_BytesChunk
 	Type          isUnencryptedData_Type `protobuf_oneof:"type"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -67,7 +68,7 @@ func (*UnencryptedData) Descriptor() ([]byte, []int) {
 	return file_proto_v1_agent_agent_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UnencryptedData) GetMetadata() *common.Metadata {
+func (x *UnencryptedData) GetMetadata() *metadata.Metadata {
 	if x != nil {
 		return x.Metadata
 	}
@@ -99,10 +100,10 @@ func (x *UnencryptedData) GetCardInfo() *CardInfo {
 	return nil
 }
 
-func (x *UnencryptedData) GetBinary() *Binary {
+func (x *UnencryptedData) GetBytesChunk() *common.BytesChunk {
 	if x != nil {
-		if x, ok := x.Type.(*UnencryptedData_Binary); ok {
-			return x.Binary
+		if x, ok := x.Type.(*UnencryptedData_BytesChunk); ok {
+			return x.BytesChunk
 		}
 	}
 	return nil
@@ -120,15 +121,15 @@ type UnencryptedData_CardInfo struct {
 	CardInfo *CardInfo `protobuf:"bytes,3,opt,name=card_info,json=cardInfo,oneof"` // данные банковских карт
 }
 
-type UnencryptedData_Binary struct {
-	Binary *Binary `protobuf:"bytes,4,opt,name=binary,oneof"` // файлы
+type UnencryptedData_BytesChunk struct {
+	BytesChunk *common.BytesChunk `protobuf:"bytes,4,opt,name=bytes_chunk,json=bytesChunk,oneof"` // часть бинарного файла
 }
 
 func (*UnencryptedData_AuthData) isUnencryptedData_Type() {}
 
 func (*UnencryptedData_CardInfo) isUnencryptedData_Type() {}
 
-func (*UnencryptedData_Binary) isUnencryptedData_Type() {}
+func (*UnencryptedData_BytesChunk) isUnencryptedData_Type() {}
 
 // Данные сайтов или сервисов: логин и пароль.
 type AuthData struct {
@@ -244,80 +245,17 @@ func (x *CardInfo) GetOwner() string {
 	return ""
 }
 
-// Бинарные данные, разбитые на чанки для передачи по сети.
-// total_chunks — общее число чанков,
-// chunk_no — порядковый номер текущего чанка,
-// data_chunk — байтовый массив с частью данных.
-type Binary struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TotalChunks   *int32                 `protobuf:"varint,1,opt,name=total_chunks,json=totalChunks" json:"total_chunks,omitempty"`
-	ChunkNo       *int32                 `protobuf:"varint,2,opt,name=chunk_no,json=chunkNo" json:"chunk_no,omitempty"`
-	DataChunk     []byte                 `protobuf:"bytes,3,opt,name=data_chunk,json=dataChunk" json:"data_chunk,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Binary) Reset() {
-	*x = Binary{}
-	mi := &file_proto_v1_agent_agent_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Binary) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Binary) ProtoMessage() {}
-
-func (x *Binary) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_v1_agent_agent_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Binary.ProtoReflect.Descriptor instead.
-func (*Binary) Descriptor() ([]byte, []int) {
-	return file_proto_v1_agent_agent_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Binary) GetTotalChunks() int32 {
-	if x != nil && x.TotalChunks != nil {
-		return *x.TotalChunks
-	}
-	return 0
-}
-
-func (x *Binary) GetChunkNo() int32 {
-	if x != nil && x.ChunkNo != nil {
-		return *x.ChunkNo
-	}
-	return 0
-}
-
-func (x *Binary) GetDataChunk() []byte {
-	if x != nil {
-		return x.DataChunk
-	}
-	return nil
-}
-
 var File_proto_v1_agent_agent_proto protoreflect.FileDescriptor
 
 const file_proto_v1_agent_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a\x15proto/v1/common.proto\"\x88\x02\n" +
-	"\x0fUnencryptedData\x12:\n" +
-	"\bmetadata\x18\x01 \x01(\v2\x1e.gophkeeper.v1.common.MetadataR\bmetadata\x12<\n" +
+	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a\x17proto/v1/metadata.proto\x1a\x15proto/v1/common.proto\"\x98\x02\n" +
+	"\x0fUnencryptedData\x12<\n" +
+	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\x12<\n" +
 	"\tauth_data\x18\x02 \x01(\v2\x1d.gophkeeper.v1.agent.AuthDataH\x00R\bauthData\x12<\n" +
-	"\tcard_info\x18\x03 \x01(\v2\x1d.gophkeeper.v1.agent.CardInfoH\x00R\bcardInfo\x125\n" +
-	"\x06binary\x18\x04 \x01(\v2\x1b.gophkeeper.v1.agent.BinaryH\x00R\x06binaryB\x06\n" +
+	"\tcard_info\x18\x03 \x01(\v2\x1d.gophkeeper.v1.agent.CardInfoH\x00R\bcardInfo\x12C\n" +
+	"\vbytes_chunk\x18\x04 \x01(\v2 .gophkeeper.v1.common.BytesChunkH\x00R\n" +
+	"bytesChunkB\x06\n" +
 	"\x04type\"B\n" +
 	"\bAuthData\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
@@ -326,12 +264,7 @@ const file_proto_v1_agent_agent_proto_rawDesc = "" +
 	"\vcard_number\x18\x01 \x01(\tR\n" +
 	"cardNumber\x12\x16\n" +
 	"\x06expiry\x18\x02 \x01(\tR\x06expiry\x12\x14\n" +
-	"\x05owner\x18\x03 \x01(\tR\x05owner\"e\n" +
-	"\x06Binary\x12!\n" +
-	"\ftotal_chunks\x18\x01 \x01(\x05R\vtotalChunks\x12\x19\n" +
-	"\bchunk_no\x18\x02 \x01(\x05R\achunkNo\x12\x1d\n" +
-	"\n" +
-	"data_chunk\x18\x03 \x01(\fR\tdataChunkB5Z3github.com/talx-hub/gophkeeper/internal/model/agentb\beditionsp\xe8\a"
+	"\x05owner\x18\x03 \x01(\tR\x05ownerB5Z3github.com/talx-hub/gophkeeper/internal/model/agentb\beditionsp\xe8\a"
 
 var (
 	file_proto_v1_agent_agent_proto_rawDescOnce sync.Once
@@ -345,19 +278,19 @@ func file_proto_v1_agent_agent_proto_rawDescGZIP() []byte {
 	return file_proto_v1_agent_agent_proto_rawDescData
 }
 
-var file_proto_v1_agent_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_v1_agent_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_v1_agent_agent_proto_goTypes = []any{
-	(*UnencryptedData)(nil), // 0: gophkeeper.v1.agent.UnencryptedData
-	(*AuthData)(nil),        // 1: gophkeeper.v1.agent.AuthData
-	(*CardInfo)(nil),        // 2: gophkeeper.v1.agent.CardInfo
-	(*Binary)(nil),          // 3: gophkeeper.v1.agent.Binary
-	(*common.Metadata)(nil), // 4: gophkeeper.v1.common.Metadata
+	(*UnencryptedData)(nil),   // 0: gophkeeper.v1.agent.UnencryptedData
+	(*AuthData)(nil),          // 1: gophkeeper.v1.agent.AuthData
+	(*CardInfo)(nil),          // 2: gophkeeper.v1.agent.CardInfo
+	(*metadata.Metadata)(nil), // 3: gophkeeper.v1.metadata.Metadata
+	(*common.BytesChunk)(nil), // 4: gophkeeper.v1.common.BytesChunk
 }
 var file_proto_v1_agent_agent_proto_depIdxs = []int32{
-	4, // 0: gophkeeper.v1.agent.UnencryptedData.metadata:type_name -> gophkeeper.v1.common.Metadata
+	3, // 0: gophkeeper.v1.agent.UnencryptedData.metadata:type_name -> gophkeeper.v1.metadata.Metadata
 	1, // 1: gophkeeper.v1.agent.UnencryptedData.auth_data:type_name -> gophkeeper.v1.agent.AuthData
 	2, // 2: gophkeeper.v1.agent.UnencryptedData.card_info:type_name -> gophkeeper.v1.agent.CardInfo
-	3, // 3: gophkeeper.v1.agent.UnencryptedData.binary:type_name -> gophkeeper.v1.agent.Binary
+	4, // 3: gophkeeper.v1.agent.UnencryptedData.bytes_chunk:type_name -> gophkeeper.v1.common.BytesChunk
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -373,7 +306,7 @@ func file_proto_v1_agent_agent_proto_init() {
 	file_proto_v1_agent_agent_proto_msgTypes[0].OneofWrappers = []any{
 		(*UnencryptedData_AuthData)(nil),
 		(*UnencryptedData_CardInfo)(nil),
-		(*UnencryptedData_Binary)(nil),
+		(*UnencryptedData_BytesChunk)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -381,7 +314,7 @@ func file_proto_v1_agent_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_v1_agent_agent_proto_rawDesc), len(file_proto_v1_agent_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

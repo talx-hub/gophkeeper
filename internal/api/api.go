@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 
 	v1 "github.com/talx-hub/gophkeeper/internal/api/v1"
-	"github.com/talx-hub/gophkeeper/internal/model/common"
 	"github.com/talx-hub/gophkeeper/pkg/session"
 	"github.com/talx-hub/gophkeeper/pkg/tokens"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
@@ -17,27 +16,19 @@ import (
 	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
 )
 
-type Storage interface {
-	Add(context.Context, common.Metadata, []byte) error
-	Get(context.Context, common.Metadata) ([]byte, error)
-	List(context.Context) ([]common.Metadata, error)
-	Delete(context.Context, common.Metadata) error
-}
-
 type Server struct {
 	grpcServer *grpc.Server
 	log        *slog.Logger
-	storage    Storage
+	// storageManager StorageManager
 	// cfg *server.Builder
 	address string // TODO: fill address from cfg
 }
 
-func NewServer(address string, log *slog.Logger, storage Storage) *Server {
+func NewServer(address string, log *slog.Logger) *Server {
 	return &Server{
 		address:    address,
 		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
 		log:        log,
-		storage:    storage,
 	}
 }
 

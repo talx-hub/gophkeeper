@@ -1,7 +1,7 @@
 BEGIN TRANSACTION;
     CREATE TABLE users(
         id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
-        hash TEXT NOT NULL);
+        login TEXT NOT NULL);
 
     CREATE TABLE passwords(
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -16,12 +16,14 @@ BEGIN TRANSACTION;
         id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
         id_user UUID REFERENCES users(id) ON DELETE RESTRICT NOT NULL,
         id_type INT REFERENCES types(id) ON DELETE RESTRICT NOT NULL,
-        plain_data BYTEA,
+        encrypted_data BYTEA,
         note TEXT NOT NULL,
         s3_key TEXT,
+        created_at TIMESTAMP WITH TIME ZONE,
+        total_size INT,
         CHECK (
-            (plain_data IS NOT NULL AND s3_key IS NULL) OR
-            (plain_data IS NULL AND s3_key IS NOT NULL)
+            (encrypted_data IS NOT NULL AND s3_key IS NULL) OR
+            (encrypted_data IS NULL AND s3_key IS NOT NULL)
             )
         );
 

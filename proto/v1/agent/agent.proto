@@ -3,16 +3,17 @@ edition = "2023";
 option go_package = "github.com/talx-hub/gophkeeper/internal/model/agent";
 package gophkeeper.v1.agent;
 
+import "proto/v1/metadata.proto";
 import "proto/v1/common.proto";
 
 // Основной объект данных, используемый и шифруемый агентом.
 // Каждое сообщение содержит метаданные и один из возможных типов данных.
 message UnencryptedData {
-  gophkeeper.v1.common.Metadata metadata = 1;
+  gophkeeper.v1.metadata.Metadata metadata      = 1;
   oneof type {
-    AuthData auth_data = 2; // данные сайтов и сервисов
-    CardInfo card_info = 3; // данные банковских карт
-    Binary binary = 4;      // файлы
+    AuthData auth_data                          = 2; // данные сайтов и сервисов
+    CardInfo card_info                          = 3; // данные банковских карт
+    gophkeeper.v1.common.BytesChunk bytes_chunk = 4; // часть бинарного файла
   };
 }
 
@@ -28,14 +29,3 @@ message CardInfo {
   string expiry = 2;
   string owner = 3;
 }
-
-// Бинарные данные, разбитые на чанки для передачи по сети.
-// total_chunks — общее число чанков,
-// chunk_no — порядковый номер текущего чанка,
-// data_chunk — байтовый массив с частью данных.
-message Binary {
-  int32 total_chunks = 1;
-  int32 chunk_no = 2;
-  bytes data_chunk = 3;
-}
-

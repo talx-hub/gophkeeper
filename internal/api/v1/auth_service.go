@@ -132,14 +132,14 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		}
 	}
 
-	const internalErrMsg = "registration failed, try again"
+	const msgRegistrationFailed = "registration failed, try again"
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
 	if _, err := s.repo.FindByLogin(ctx1, userData.GetLogin()); err == nil {
 		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
 	} else if !errors.Is(err, model.ErrNotFound) {
 		s.log.ErrorContext(ctx, "failed to check login existence", "err", err)
-		return nil, status.Error(codes.Internal, internalErrMsg)
+		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
 	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
@@ -147,7 +147,7 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to hash password", "err", err)
-		return nil, status.Error(codes.Internal, internalErrMsg)
+		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 	userID, err := s.repo.Create(ctx2, &model.User{
 		Login:        userData.GetLogin(),
@@ -155,13 +155,13 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	})
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create user", "err", err)
-		return nil, status.Error(codes.Internal, internalErrMsg)
+		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
 	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create session", "err", err)
-		return nil, status.Errorf(codes.Internal, internalErrMsg)
+		return nil, status.Errorf(codes.Internal, msgRegistrationFailed)
 	}
 	resp := &authpb.RegisterResponse{
 		Credentials: &authpb.Credentials{

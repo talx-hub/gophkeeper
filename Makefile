@@ -7,7 +7,7 @@ clean-gen-proto:
 	find proto -type f ! -name "*.proto" -delete
 
 .PHONY: generate
-generate: auth.proto health.proto keeper.proto agent.proto mocks
+generate: auth.proto health.proto keeper.proto agent.proto
 
 .PHONY: auth.proto
 auth.proto:
@@ -27,16 +27,15 @@ health.proto:
 		--go-grpc_opt=paths=source_relative \
 		proto/v1/health/health.proto
 
-.PHONY: common.proto
-common.proto:
+.PHONY: metadata.proto
+metadata.proto:
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
-		proto/v1/common.proto
-	mv ./proto/v1/common.pb.go ./internal/model/common/
+		proto/v1/metadata.proto
 
 .PHONY: keeper.proto
-keeper.proto: common.proto
+keeper.proto: metadata.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
@@ -45,7 +44,7 @@ keeper.proto: common.proto
 		proto/v1/keeper/keeper.proto
 
 .PHONY: auth.proto
-agent.proto: common.proto
+agent.proto: metadata.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \

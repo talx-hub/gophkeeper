@@ -3,8 +3,12 @@ edition = "2023";
 option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/keeper;keeperpb";
 package gophkeeper.v1.keeper;
 
-import "google/protobuf/empty.proto";
+import "proto/v1/metadata.proto";
 import "proto/v1/common.proto";
+
+// ====================================
+// ===       Описание сервиса       ===
+// ====================================
 
 // Keeper — сервис для управления и синхронизации данных пользователя,
 // включая данные для входа в различные сервисы, информацию по картам и бинарные файлы.
@@ -14,17 +18,17 @@ service Keeper {
   rpc Sync(SyncRequest) returns (stream SyncResponse);
 
   // Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
-  rpc Add(AddRequest) returns (google.protobuf.Empty);
+  rpc Add(stream AddRequest) returns (AddResponse);
 
   // List — возвращает список метаданных доступных данных пользователя.
   rpc List(ListRequest) returns (ListResponse);
 
   // Get — получает полный объект данных по заданным метаданным.
-  rpc Get(GetRequest) returns (GetResponse);
+  rpc Get(GetRequest) returns (stream GetResponse);
 
   // Delete — удаляет объект данных, идентифицированный метаданными.
   // Возвращает пустой ответ при успехе.
-  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
 // ====================================
@@ -49,81 +53,46 @@ message SyncRequest {
 // Поток сообщений SyncResponse позволяет серверу поэтапно
 // отправлять данные клиенту.
 message SyncResponse {
-  EncryptedWithMetadata data = 1;
+  gophkeeper.v1.metadata.Metadata metadata = 1;
+  gophkeeper.v1.common.Payload payload = 2;
 }
 
 // Запрос на добавление нового объекта данных.
 message AddRequest {
-  EncryptedWithMetadata data = 1;
+  gophkeeper.v1.metadata.Metadata metadata = 1;
+  gophkeeper.v1.common.Payload payload = 2;
+}
+
+// Ответ сервера на запрос добавления объекта данных.
+message AddResponse{
 }
 
 // Запрос получения объекта данных по метаданным.
 message GetRequest {
-  gophkeeper.v1.common.Metadata metadata = 1;
+  gophkeeper.v1.metadata.Metadata metadata = 1;
 }
 
 // Ответ на запрос Get: возвращает полный объект данных.
 message GetResponse {
-  EncryptedWithMetadata data = 1;
+  gophkeeper.v1.metadata.Metadata metadata = 1;
+  gophkeeper.v1.common.Payload payload = 2;
 }
 
 // Запрос на удаление объекта данных по метаданным.
 message DeleteRequest {
-  gophkeeper.v1.common.Metadata metadata = 1;
+  gophkeeper.v1.metadata.Metadata metadata = 1;
+}
+
+// Ответ сервера на запрос удаления объекта данных.
+message DeleteResponse {
 }
 
 // Запрос на получение списка объектов.
 // Параметр includeBinary указывает, включать ли бинарные данные в список.
 message ListRequest {
-  bool includeBinary = 1;
 }
 
 // Ответ на запрос списка: список метаданных объектов, сохранённых в хранилище.
 message ListResponse {
-  repeated gophkeeper.v1.common.Metadata metadata = 1;
-}
-
-// ====================================
-// ===  Внутренние структуры данных ===
-// ====================================
-
-// Данные для передаваемые между агентом и сервером
-message EncryptedWithMetadata {
-  gophkeeper.v1.common.Metadata metadata = 1;
-  bytes data = 2;
-}
-
-
-// Основной объект данных, используемый и шифруемый агентом.
-// Каждое сообщение содержит метаданные и один из возможных типов данных.
-message UnencryptedData {
-  gophkeeper.v1.common.Metadata metadata = 1; // метаданные объекта
-  oneof type {
-    AuthData auth_data = 2; // данные сайтов и сервисов
-    CardInfo card_info = 3; // данные банковских карт
-    Binary binary = 4;      // файлы
-  };
-}
-
-// Данные сайтов или сервисов: логин и пароль.
-message AuthData {
-  string username = 1;
-  string password = 2;
-}
-
-// Информация по банковской карте: номер, дата выпуска, имя и фамилия владельца.
-message CardInfo {
-  string card_number = 1;
-  string expiry = 2;
-  string owner = 3;
-}
-
-// Бинарные данные, разбитые на чанки для передачи по сети.
-// total_chunks — общее число чанков,
-// chunk_no — порядковый номер текущего чанка,
-// data_chunk — байтовый массив с частью данных.
-message Binary {
-  int32 total_chunks = 1;
-  int32 chunk_no = 2;
-  bytes data_chunk = 3;
+  repeated gophkeeper.v1.metadata.Metadata metadata = 1;
 }

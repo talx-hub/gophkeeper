@@ -1,0 +1,24 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/metadata;metadatapb";
+package gophkeeper.v1.metadata;
+
+import "google/protobuf/timestamp.proto";
+
+// Метаданные, описывающие объект данных.
+// Здесь хранится основная информация для идентификации объекта.
+message Metadata {
+  enum DataType {
+    DATA_TYPE_UNSPECIFIED = 0;
+    DATA_TYPE_AUTH        = 1;
+    DATA_TYPE_CARD        = 2;
+    DATA_TYPE_BINARY      = 3;
+  }
+  DataType data_type                    = 1; // Один из типов хранимых данных
+  int64 id                              = 2; // Уникальный идентификатор записи
+  string name                           = 3; // Человекочитаемое имя
+  string description                    = 4; // Заметка
+  google.protobuf.Timestamp created_at  = 5; // Время создания
+  uint64 total_size                     = 6; // Размер файла [Kib]
+}
+

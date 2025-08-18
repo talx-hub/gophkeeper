@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -38,14 +37,14 @@ type KeeperClient interface {
 	// Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
 	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SyncResponse], error)
 	// Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
-	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Add(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[AddRequest, AddResponse], error)
 	// List — возвращает список метаданных доступных данных пользователя.
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	// Get — получает полный объект данных по заданным метаданным.
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetResponse], error)
 	// Delete — удаляет объект данных, идентифицированный метаданными.
 	// Возвращает пустой ответ при успехе.
-	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type keeperClient struct {
@@ -75,15 +74,18 @@ func (c *keeperClient) Sync(ctx context.Context, in *SyncRequest, opts ...grpc.C
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Keeper_SyncClient = grpc.ServerStreamingClient[SyncResponse]
 
-func (c *keeperClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *keeperClient) Add(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[AddRequest, AddResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Keeper_Add_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Keeper_ServiceDesc.Streams[1], Keeper_Add_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[AddRequest, AddResponse]{ClientStream: stream}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Keeper_AddClient = grpc.ClientStreamingClient[AddRequest, AddResponse]
 
 func (c *keeperClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -95,19 +97,28 @@ func (c *keeperClient) List(ctx context.Context, in *ListRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *keeperClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+func (c *keeperClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, Keeper_Get_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Keeper_ServiceDesc.Streams[2], Keeper_Get_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[GetRequest, GetResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *keeperClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Keeper_GetClient = grpc.ServerStreamingClient[GetResponse]
+
+func (c *keeperClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, Keeper_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -126,14 +137,14 @@ type KeeperServer interface {
 	// Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
 	Sync(*SyncRequest, grpc.ServerStreamingServer[SyncResponse]) error
 	// Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
-	Add(context.Context, *AddRequest) (*emptypb.Empty, error)
+	Add(grpc.ClientStreamingServer[AddRequest, AddResponse]) error
 	// List — возвращает список метаданных доступных данных пользователя.
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	// Get — получает полный объект данных по заданным метаданным.
-	Get(context.Context, *GetRequest) (*GetResponse, error)
+	Get(*GetRequest, grpc.ServerStreamingServer[GetResponse]) error
 	// Delete — удаляет объект данных, идентифицированный метаданными.
 	// Возвращает пустой ответ при успехе.
-	Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error)
+	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedKeeperServer()
 }
 
@@ -147,16 +158,16 @@ type UnimplementedKeeperServer struct{}
 func (UnimplementedKeeperServer) Sync(*SyncRequest, grpc.ServerStreamingServer[SyncResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method Sync not implemented")
 }
-func (UnimplementedKeeperServer) Add(context.Context, *AddRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
+func (UnimplementedKeeperServer) Add(grpc.ClientStreamingServer[AddRequest, AddResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method Add not implemented")
 }
 func (UnimplementedKeeperServer) List(context.Context, *ListRequest) (*ListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedKeeperServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+func (UnimplementedKeeperServer) Get(*GetRequest, grpc.ServerStreamingServer[GetResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedKeeperServer) Delete(context.Context, *DeleteRequest) (*emptypb.Empty, error) {
+func (UnimplementedKeeperServer) Delete(context.Context, *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedKeeperServer) mustEmbedUnimplementedKeeperServer() {}
@@ -191,23 +202,12 @@ func _Keeper_Sync_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Keeper_SyncServer = grpc.ServerStreamingServer[SyncResponse]
 
-func _Keeper_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KeeperServer).Add(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Keeper_Add_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).Add(ctx, req.(*AddRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+func _Keeper_Add_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(KeeperServer).Add(&grpc.GenericServerStream[AddRequest, AddResponse]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Keeper_AddServer = grpc.ClientStreamingServer[AddRequest, AddResponse]
 
 func _Keeper_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
@@ -227,23 +227,16 @@ func _Keeper_List_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Keeper_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Keeper_Get_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(KeeperServer).Get(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Keeper_Get_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServer).Get(ctx, req.(*GetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(KeeperServer).Get(m, &grpc.GenericServerStream[GetRequest, GetResponse]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Keeper_GetServer = grpc.ServerStreamingServer[GetResponse]
 
 func _Keeper_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRequest)
@@ -271,16 +264,8 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*KeeperServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Add",
-			Handler:    _Keeper_Add_Handler,
-		},
-		{
 			MethodName: "List",
 			Handler:    _Keeper_List_Handler,
-		},
-		{
-			MethodName: "Get",
-			Handler:    _Keeper_Get_Handler,
 		},
 		{
 			MethodName: "Delete",
@@ -291,6 +276,16 @@ var Keeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Sync",
 			Handler:       _Keeper_Sync_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Add",
+			Handler:       _Keeper_Add_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Get",
+			Handler:       _Keeper_Get_Handler,
 			ServerStreams: true,
 		},
 	},
