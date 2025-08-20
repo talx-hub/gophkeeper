@@ -1,6 +1,6 @@
 edition = "2023";
 
-option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/metadata;metadatapb";
+option go_package = "github.com/talx-hub/gophkeeper/proto/v1/metadata;metadatapb";
 package gophkeeper.v1.metadata;
 
 import "google/protobuf/timestamp.proto";
@@ -19,6 +19,14 @@ message Metadata {
   string name                           = 3; // Человекочитаемое имя
   string description                    = 4; // Заметка
   google.protobuf.Timestamp created_at  = 5; // Время создания
-  uint64 total_size                     = 6; // Размер файла [Kib]
+  ChunkMetadata chunk_metadata          = 6; // Если data_type == DATA_TYPE_BINARY, это поле заполняется данными
+}
+
+message ChunkMetadata {
+  uint64 offset         = 1; // смещение байт в объекте (0-based)
+  uint64 object_size    = 2; // общий размер объекта в байтах
+  bool   last           = 3; // последний ли чанк
+  uint32 crc32c         = 4; // CRC для чанка
+  bytes  object_sha256  = 5; // 32 байта;  Хэш всего файла — одинаков в каждом чанке
 }
 

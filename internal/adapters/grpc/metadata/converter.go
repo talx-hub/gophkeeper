@@ -2,61 +2,95 @@ package metadata
 
 import (
 	"errors"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/proto/v1"
+	metadatapb "github.com/talx-hub/gophkeeper/proto/v1/metadata"
 )
 
 func FromProtoMetadata(m *metadatapb.Metadata) (*model.Metadata, error) {
-	var dataType model.DataType
+	if m == nil {
+		return nil, errors.New("nil proto metadata")
+	}
+
+	var dt model.DataType
 	switch m.GetDataType() {
 	case metadatapb.Metadata_DATA_TYPE_AUTH:
-		dataType = model.DataTypeAuthenticationCredentials
+		dt = model.DataTypeAuthenticationCredentials
 	case metadatapb.Metadata_DATA_TYPE_CARD:
-		dataType = model.DataTypeCard
+		dt = model.DataTypeCard
 	case metadatapb.Metadata_DATA_TYPE_BINARY:
-		dataType = model.DataTypeBinary
+		dt = model.DataTypeBinary
 	default:
 		return nil, errors.New("unknown metadata type")
 	}
 
+	var created time.Time
+	if ts := m.GetCreatedAt(); ts != nil {
+		created = ts.AsTime()
+	}
+
+	var chunkMeta *model.ChunkMetadata
+	if cm := m.GetChunkMetadata(); cm != nil {
+		chunkMeta = &model.ChunkMetadata{
+			Offset:       cm.GetOffset(),
+			ObjectSize:   cm.GetObjectSize(),
+			Last:         cm.GetLast(),
+			CRC32C:       cm.GetCrc32C(),
+			ObjectSHA256: cm.GetObjectSha256(),
+		}
+	}
+
 	return &model.Metadata{
-		DataType:    dataType,
-		Name:        m.GetName(),
-		Description: m.GetDescription(),
-		CreatedAt:   m.GetCreatedAt().AsTime(),
-		TotalSize:   m.GetTotalSize(),
+		ID:            model.DataID(m.GetId()),
+		DataType:      dt,
+		Name:          m.GetName(),
+		Description:   m.GetDescription(),
+		CreatedAt:     created,
+		ChunkMetadata: chunkMeta,
 	}, nil
 }
 
 func ToProtoMetadata(m *model.Metadata) *metadatapb.Metadata {
-	var protoDataType metadatapb.Metadata_DataType
-	switch m.DataType {
-	case model.DataTypeAuthenticationCredentials:
-		protoDataType = metadatapb.Metadata_DATA_TYPE_AUTH
-	case model.DataTypeCard:
-		protoDataType = metadatapb.Metadata_DATA_TYPE_CARD
-	case model.DataTypeBinary:
-		protoDataType = metadatapb.Metadata_DATA_TYPE_BINARY
-	default:
-		protoDataType = metadatapb.Metadata_DATA_TYPE_UNSPECIFIED
+	if m == nil {
+		return nil
 	}
 
-	int64Ptr := func(id int64) *int64 {
-		return &id
+	var pdt metadatapb.Metadata_DataType
+	switch m.DataType {
+	case model.DataTypeAuthenticationCredentials:
+		pdt = metadatapb.Metadata_DATA_TYPE_AUTH
+	case model.DataTypeCard:
+		pdt = metadatapb.Metadata_DATA_TYPE_CARD
+	case model.DataTypeBinary:
+		pdt = metadatapb.Metadata_DATA_TYPE_BINARY
+	default:
+		pdt = metadatapb.Metadata_DATA_TYPE_UNSPECIFIED
 	}
-	uint64Ptr := func(size uint64) *uint64 {
-		return &size
+
+	var cm *metadatapb.ChunkMetadata
+	if x := m.ChunkMetadata; x != nil {
+		cm = &metadatapb.ChunkMetadata{
+			Offset:       &x.Offset,
+			ObjectSize:   &x.ObjectSize,
+			Last:         &x.Last,
+			Crc32C:       &x.CRC32C,
+			ObjectSha256: x.ObjectSHA256,
+		}
 	}
 
 	return &metadatapb.Metadata{
-		DataType:    &protoDataType,
-		Id:          int64Ptr(int64(m.ID)),
-		Name:        &m.Name,
-		Description: &m.Description,
-		CreatedAt:   timestamppb.New(m.CreatedAt),
-		TotalSize:   uint64Ptr(m.TotalSize),
+		DataType:      &pdt,
+		Id:            ptrInt64(int64(m.ID)),
+		Name:          &m.Name,
+		Description:   &m.Description,
+		CreatedAt:     timestamppb.New(m.CreatedAt),
+		ChunkMetadata: cm,
 	}
+}
+
+func ptrInt64(val int64) *int64 {
+	return &val
 }

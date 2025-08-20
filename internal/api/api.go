@@ -54,7 +54,7 @@ func (s *Server) Start() error {
 			nil,
 		))
 
-	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperService{})
+	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperGRPCService{})
 
 	//nolint:wrapcheck // error could be nil
 	return s.grpcServer.Serve(lis)

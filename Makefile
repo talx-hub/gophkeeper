@@ -32,10 +32,17 @@ metadata.proto:
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
-		proto/v1/metadata.proto
+		proto/v1/metadata/metadata.proto
+
+.PHONY: common.proto
+common.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/common/common.proto
 
 .PHONY: keeper.proto
-keeper.proto: metadata.proto
+keeper.proto: metadata.proto common.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \
@@ -44,7 +51,7 @@ keeper.proto: metadata.proto
 		proto/v1/keeper/keeper.proto
 
 .PHONY: auth.proto
-agent.proto: metadata.proto
+agent.proto: metadata.proto common.proto
 	protoc \
 		--go_out=. \
 		--go_opt=paths=source_relative \

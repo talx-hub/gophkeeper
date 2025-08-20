@@ -1,0 +1,10 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/proto/v1/common;commonpb";
+package gophkeeper.v1.common;
+
+// Данные, передаваемые между агентом и сервером
+message Payload {
+    bytes sealed_data  = 1; // зашифрованные данные
+}
+

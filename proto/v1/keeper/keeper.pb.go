@@ -7,8 +7,8 @@
 package keeperpb
 
 import (
-	common "github.com/talx-hub/gophkeeper/internal/api/v1/common"
-	metadata "github.com/talx-hub/gophkeeper/internal/api/v1/metadata"
+	common "github.com/talx-hub/gophkeeper/proto/v1/common"
+	metadata "github.com/talx-hub/gophkeeper/proto/v1/metadata"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -447,7 +447,6 @@ func (*DeleteResponse) Descriptor() ([]byte, []int) {
 }
 
 // Запрос на получение списка объектов.
-// Параметр includeBinary указывает, включать ли бинарные данные в список.
 type ListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -533,7 +532,7 @@ var File_proto_v1_keeper_keeper_proto protoreflect.FileDescriptor
 
 const file_proto_v1_keeper_keeper_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/v1/keeper/keeper.proto\x12\x14gophkeeper.v1.keeper\x1a\x17proto/v1/metadata.proto\x1a\x15proto/v1/common.proto\"\xa6\x01\n" +
+	"\x1cproto/v1/keeper/keeper.proto\x12\x14gophkeeper.v1.keeper\x1a proto/v1/metadata/metadata.proto\x1a\x1cproto/v1/common/common.proto\"\xa6\x01\n" +
 	"\vSyncRequest\x12G\n" +
 	"\tsync_mode\x18\x01 \x01(\x0e2*.gophkeeper.v1.keeper.SyncRequest.SyncModeR\bsyncMode\"N\n" +
 	"\bSyncMode\x12\x19\n" +

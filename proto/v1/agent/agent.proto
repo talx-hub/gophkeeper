@@ -3,8 +3,8 @@ edition = "2023";
 option go_package = "github.com/talx-hub/gophkeeper/internal/model/agent";
 package gophkeeper.v1.agent;
 
-import "proto/v1/metadata.proto";
-import "proto/v1/common.proto";
+import "proto/v1/metadata/metadata.proto";
+import "proto/v1/common/common.proto";
 
 // Основной объект данных, используемый и шифруемый агентом.
 // Каждое сообщение содержит метаданные и один из возможных типов данных.

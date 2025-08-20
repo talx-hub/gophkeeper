@@ -249,7 +249,7 @@ var File_proto_v1_agent_agent_proto protoreflect.FileDescriptor
 
 const file_proto_v1_agent_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a\x17proto/v1/metadata.proto\x1a\x15proto/v1/common.proto\"\x98\x02\n" +
+	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a proto/v1/metadata/metadata.proto\x1a\x1cproto/v1/common/common.proto\"\x98\x02\n" +
 	"\x0fUnencryptedData\x12<\n" +
 	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\x12<\n" +
 	"\tauth_data\x18\x02 \x01(\v2\x1d.gophkeeper.v1.agent.AuthDataH\x00R\bauthData\x12<\n" +
