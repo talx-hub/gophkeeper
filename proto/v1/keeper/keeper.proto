@@ -17,7 +17,7 @@ service Keeper {
   // Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
   rpc Sync(SyncRequest)       returns (stream SyncResponse);
 
-  // Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
+  // Add — добавляет новый объект данных. Возвращает идентификатор (единственное заполненное поле в объекте metadata).
   rpc Add(stream AddRequest)  returns (AddResponse);
 
   // List — возвращает список метаданных доступных данных пользователя.
@@ -65,6 +65,7 @@ message AddRequest {
 
 // Ответ сервера на запрос добавления объекта данных.
 message AddResponse{
+  gophkeeper.v1.metadata.Metadata metadata = 1;
 }
 
 // Запрос получения объекта данных по метаданным.

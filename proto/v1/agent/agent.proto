@@ -13,7 +13,7 @@ message UnencryptedData {
   oneof type {
     AuthData auth_data                          = 2; // данные сайтов и сервисов
     CardInfo card_info                          = 3; // данные банковских карт
-    gophkeeper.v1.common.BytesChunk bytes_chunk = 4; // часть бинарного файла
+    gophkeeper.v1.common.Payload payload        = 4; // часть бинарного файла
   };
 }
 

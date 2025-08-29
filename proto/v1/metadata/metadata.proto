@@ -29,4 +29,3 @@ message ChunkMetadata {
   uint32 crc32c         = 4; // CRC для чанка
   bytes  object_sha256  = 5; // 32 байта;  Хэш всего файла — одинаков в каждом чанке
 }
-

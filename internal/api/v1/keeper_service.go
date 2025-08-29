@@ -27,12 +27,23 @@ type KeeperGRPCService struct {
 	log           *slog.Logger
 }
 
+func NewKeeperGRPCService(
+	log *slog.Logger,
+	keeperUseCase KeeperUseCase,
+) *KeeperGRPCService {
+	return &KeeperGRPCService{
+		keeperUseCase: keeperUseCase,
+		log:           log,
+	}
+}
+
+// KeeperUseCase -- Заготовка для внедрения еще и S3 хранилища.
 type KeeperUseCase interface {
 	AddSealed(ctx context.Context, userID model.UserID, meta *model.Metadata, sealed []byte) (model.DataID, error)
-	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.GRPCStreamSenderCB) error
+	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error
 	List(ctx context.Context, userID model.UserID) ([]model.Metadata, error)
 	Delete(ctx context.Context, userID model.UserID, id model.DataID) error
-	Sync(ctx context.Context, userID model.UserID, mode keeper.SyncMode, callback keeper.GRPCStreamSenderCB) error
+	Sync(ctx context.Context, userID model.UserID, mode keeper.SyncMode, callback keeper.StreamCallback) error
 }
 
 func (s *KeeperGRPCService) Sync(
