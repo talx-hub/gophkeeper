@@ -1,3 +1,6 @@
+// Package v1 содержит gRPC-обработчики (driving-adapters) сервиса Keeper.
+// Хэндлеры занимаются маппингом proto <-> доменная модель и делегируют
+// бизнес-логику в use-case (internal/service/keeper).
 package v1
 
 import (
@@ -21,12 +24,19 @@ import (
 
 const MsgAgentWrong = "agent error"
 
+// KeeperGRPCService реализует keeperpb.KeeperServer.
+// Хэндлеры валидируют вход, извлекают userID из контекста,
+// конвертируют типы и вызывают use-case. Ошибки маппятся в gRPC-коды.
 type KeeperGRPCService struct {
 	keeperpb.UnimplementedKeeperServer
 	keeperUseCase KeeperUseCase
 	log           *slog.Logger
 }
 
+// NewKeeperGRPCService создаёт экземпляр gRPC-сервиса Keeper.
+// Параметры:
+//   - log — логгер для диагностики;
+//   - keeperUseCase — интерфейс прикладной логики (service/keeper).
 func NewKeeperGRPCService(
 	log *slog.Logger,
 	keeperUseCase KeeperUseCase,
@@ -37,15 +47,30 @@ func NewKeeperGRPCService(
 	}
 }
 
-// KeeperUseCase -- Заготовка для внедрения еще и S3 хранилища.
+// KeeperUseCase описывает операции прикладного уровня,
+// которые вызываются из gRPC-слоя. Интерфейс позволяет
+// прозрачно подключать разные стораджи (Postgres/S3)
+// без изменения транспортного слоя.
 type KeeperUseCase interface {
+	// AddSealed добавляет объект (sealed bytes) с метаданными.
 	AddSealed(ctx context.Context, userID model.UserID, meta *model.Metadata, sealed []byte) (model.DataID, error)
+
+	// GetSealed получает объект по id и отправляет его наружу через callback (возможен поток чанков).
 	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error
-	List(ctx context.Context, userID model.UserID) ([]model.Metadata, error)
+
+	// List возвращает список метаданных для секретов пользователя.
+	List(ctx context.Context, userID model.UserID) ([]keeper.MetaLoc, error)
+
+	// Delete удаляет объект и его метаданные.
 	Delete(ctx context.Context, userID model.UserID, id model.DataID) error
+
+	// Sync синхронизирует данные пользователя (метаданные и/или payload) через callback.
 	Sync(ctx context.Context, userID model.UserID, mode keeper.SyncMode, callback keeper.StreamCallback) error
 }
 
+// Sync обрабатывает серверный стрим синхронизации.
+// В зависимости от режима (SHORT/FULL) use-case формирует поток ответов,
+// а хэндлер отправляет их в gRPC-стрим.
 func (s *KeeperGRPCService) Sync(
 	req *keeperpb.SyncRequest, stream grpc.ServerStreamingServer[keeperpb.SyncResponse],
 ) error {
@@ -82,6 +107,7 @@ func (s *KeeperGRPCService) Sync(
 	return nil
 }
 
+// Add принимает клиентский стрим AddRequest и добавляет объекты.
 func (s *KeeperGRPCService) Add(
 	stream grpc.ClientStreamingServer[keeperpb.AddRequest, keeperpb.AddResponse],
 ) error {
@@ -142,6 +168,7 @@ func (s *KeeperGRPCService) Add(
 	return stream.SendAndClose(&keeperpb.AddResponse{})
 }
 
+// List возвращает список метаданных (без payload) для текущего пользователя.
 func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 ) (*keeperpb.ListResponse, error) {
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
@@ -155,7 +182,7 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
-	list, err := s.keeperUseCase.List(ctxTO, userID)
+	metaLocs, err := s.keeperUseCase.List(ctxTO, userID)
 	if err != nil {
 		s.log.ErrorContext(ctxTO, "failed to list metadata from Repository",
 			"userID", userID,
@@ -164,9 +191,9 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 		return nil, status.Error(codes.Internal, "server internal error")
 	}
 
-	listDTO := make([]*metadatapb.Metadata, len(list))
-	for i, elem := range list {
-		listDTO[i] = metadata.ToProtoMetadata(&elem)
+	listDTO := make([]*metadatapb.Metadata, len(metaLocs))
+	for i, elem := range metaLocs {
+		listDTO[i] = metadata.ToProtoMetadata(&elem.Meta)
 	}
 
 	return &keeperpb.ListResponse{
@@ -174,6 +201,9 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 	}, nil
 }
 
+// Get отдаёт объект по идентификатору через серверный стрим.
+// Use-case может вызывать callback несколько раз,
+// хэндлер отправляет каждую порцию как отдельное gRPC-сообщение.
 func (s *KeeperGRPCService) Get(
 	req *keeperpb.GetRequest,
 	stream grpc.ServerStreamingServer[keeperpb.GetResponse],
@@ -213,6 +243,9 @@ func (s *KeeperGRPCService) Get(
 	return nil
 }
 
+// Delete удаляет объект и его метаданные по идентификатору.
+// Требует валидного userID в контексте. При ошибке репозитория
+// возвращает Internal.
 func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequest,
 ) (*keeperpb.DeleteResponse, error) {
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
