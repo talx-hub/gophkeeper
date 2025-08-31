@@ -1,10 +1,13 @@
 // Package v1 содержит gRPC-обработчики (driving-adapters) сервиса Keeper.
 // Хэндлеры занимаются маппингом proto <-> доменная модель и делегируют
 // бизнес-логику в use-case (internal/service/keeper).
+//
+//nolint:wrapcheck // reason: this package intentionally returns raw errors and errors are logged
 package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -23,6 +26,11 @@ import (
 )
 
 const MsgAgentWrong = "agent error"
+const MsgConversionFailed = "failed to convert ctx.Value(ContextKeyUserID) to (model.UserID)"
+const MsgUserNotAuthenticated = "user not authenticated"
+const MsgSyncFailed = "sync failed"
+const KeyLoggerActualType = "actual_type"
+const KeyLoggerUserID = "user_id"
 
 // KeeperGRPCService реализует keeperpb.KeeperServer.
 // Хэндлеры валидируют вход, извлекают userID из контекста,
@@ -78,9 +86,9 @@ func (s *KeeperGRPCService) Sync(
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
-		s.log.ErrorContext(ctx, "failed to convert ctx.Value(ContextKeyUserID) to (model.UserID)",
-			"actual_type", actualType)
-		return status.Error(codes.Unauthenticated, "user not authenticated")
+		s.log.ErrorContext(ctx, MsgConversionFailed,
+			KeyLoggerActualType, actualType)
+		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
 	mode := keeper.SyncModeShort
@@ -99,10 +107,10 @@ func (s *KeeperGRPCService) Sync(
 		})
 	if err != nil {
 		s.log.ErrorContext(ctx,
-			"sync failed",
-			"userID", userID,
-			"err", err)
-		return status.Error(codes.Internal, "sync failed")
+			MsgSyncFailed,
+			KeyLoggerUserID, userID,
+			model.KeyLoggerError, err)
+		return status.Error(codes.Internal, MsgSyncFailed)
 	}
 	return nil
 }
@@ -115,29 +123,29 @@ func (s *KeeperGRPCService) Add(
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
-		s.log.ErrorContext(ctx, "failed to convert ctx.Value(ContextKeyUserID) to (model.UserID)",
-			"actual_type", actualType)
-		return status.Error(codes.Unauthenticated, "user not authenticated")
+		s.log.ErrorContext(ctx, MsgConversionFailed,
+			KeyLoggerActualType, actualType)
+		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
 	for {
 		req, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			s.log.ErrorContext(ctx, "recv failed", "userID", userID, "err", err)
+			s.log.ErrorContext(ctx, "recv failed", KeyLoggerUserID, userID, model.KeyLoggerError, err)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
 
 		metaDTO := req.GetMetadata()
 		if metaDTO == nil {
-			s.log.ErrorContext(ctx, "bad metadata: metadata is empty", "userID", userID)
+			s.log.ErrorContext(ctx, "bad metadata: metadata is empty", KeyLoggerUserID, userID)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
 		payload := req.GetPayload()
 		if payload == nil {
-			s.log.ErrorContext(ctx, "payload is nil", "userID", userID)
+			s.log.ErrorContext(ctx, "payload is nil", KeyLoggerUserID, userID)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
 
@@ -145,22 +153,22 @@ func (s *KeeperGRPCService) Add(
 		if err != nil {
 			s.log.ErrorContext(ctx,
 				"bad metadata",
-				"userID", userID,
-				"err", err,
+				KeyLoggerUserID, userID,
+				model.KeyLoggerError, err,
 			)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
 		sealedData := payload.GetSealedData()
 		if sealedData == nil {
 			s.log.ErrorContext(ctx, "sealedData and binaryChunk are empty",
-				"userID", userID,
+				KeyLoggerUserID, userID,
 			)
 			return status.Error(codes.InvalidArgument, "data should be filled")
 		}
 		if _, err := s.keeperUseCase.AddSealed(ctx, userID, meta, sealedData); err != nil {
 			s.log.ErrorContext(ctx, "failed to AddSealed",
-				"userID", userID,
-				"err", err)
+				KeyLoggerUserID, userID,
+				model.KeyLoggerError, err)
 			return status.Error(codes.Internal, "add failed")
 		}
 	}
@@ -185,8 +193,8 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 	metaLocs, err := s.keeperUseCase.List(ctxTO, userID)
 	if err != nil {
 		s.log.ErrorContext(ctxTO, "failed to list metadata from Repository",
-			"userID", userID,
-			"err", err,
+			KeyLoggerUserID, userID,
+			model.KeyLoggerError, err,
 		)
 		return nil, status.Error(codes.Internal, "server internal error")
 	}
@@ -212,9 +220,9 @@ func (s *KeeperGRPCService) Get(
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
-		s.log.ErrorContext(ctx, "failed to convert ctx.Value(ContextKeyUserID) to (model.UserID)",
-			"actual_type", actualType)
-		return status.Error(codes.Unauthenticated, "user not authenticated")
+		s.log.ErrorContext(ctx, MsgConversionFailed,
+			KeyLoggerActualType, actualType)
+		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
 	metaDTO := req.GetMetadata()
@@ -234,11 +242,11 @@ func (s *KeeperGRPCService) Get(
 		})
 	if err != nil {
 		s.log.ErrorContext(ctx,
-			"sync failed",
-			"userID", userID,
-			"dataID", metaDTO.GetId(),
-			"err", err)
-		return status.Error(codes.Internal, "sync failed")
+			MsgSyncFailed,
+			KeyLoggerUserID, userID,
+			"data_id", metaDTO.GetId(),
+			model.KeyLoggerError, err)
+		return status.Error(codes.Internal, MsgSyncFailed)
 	}
 	return nil
 }
@@ -251,9 +259,9 @@ func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequ
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
-		s.log.ErrorContext(ctx, "failed to convert ctx.Value(ContextKeyUserID) to (model.UserID)",
-			"actual_type", actualType)
-		return nil, status.Error(codes.Unauthenticated, "user not authenticated")
+		s.log.ErrorContext(ctx, MsgConversionFailed,
+			KeyLoggerActualType, actualType)
+		return nil, status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
 	metaDTO := req.GetMetadata()
@@ -266,9 +274,9 @@ func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequ
 	if err != nil {
 		s.log.ErrorContext(ctx,
 			"delete failed",
-			"userID", userID,
-			"dataID", metaDTO.GetId(),
-			"err", err)
+			KeyLoggerUserID, userID,
+			"data_id", metaDTO.GetId(),
+			model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, "delete failed")
 	}
 

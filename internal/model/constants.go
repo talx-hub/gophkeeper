@@ -10,3 +10,5 @@ const RepoOperationTO = 2 * time.Second
 const ContextKeyUserID = "userID"
 
 var ErrNotFound = errors.New("not found")
+
+var KeyLoggerError = "err"

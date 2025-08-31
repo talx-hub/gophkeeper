@@ -1,3 +1,4 @@
+//nolint:wrapcheck // reason: this package intentionally returns raw errors and errors are logged
 package v1
 
 import (
@@ -51,22 +52,18 @@ func NewAuthService(
 	}
 }
 
+const MsgRequestValidationFailed = "request validation failed: check if both Login and Password are filled"
+
 func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 ) (*authpb.LoginResponse, error) {
 	userData := r.GetAuthData()
 	if userData == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			"request validation failed: check if both Login and Password are filled")
-	} else {
-		if userData.Login == nil || userData.Password == nil {
-			s.log.ErrorContext(ctx,
-				"request validation failed: invalid login or password")
-			return nil, status.Errorf(
-				codes.InvalidArgument,
-				"request validation failed: check if both Login and Password are filled")
-		}
+		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
+	} else if userData.Login == nil || userData.Password == nil {
+		s.log.ErrorContext(ctx,
+			"request validation failed: invalid login or password")
+		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
 	}
 
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
@@ -75,17 +72,17 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to find user by login",
 			"login", userData.GetLogin(),
-			"err", err)
+			model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Unauthenticated, "failed to find user")
 	}
 	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(userData.GetPassword())); err != nil {
-		s.log.ErrorContext(ctx, "password format is wrong", "err", err)
+		s.log.ErrorContext(ctx, "password format is wrong", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Unauthenticated, "password format is wrong")
 	}
 
 	access, refresh, err := s.sessionService.CreateSession(ctx, user.UUID)
 	if err != nil {
-		s.log.ErrorContext(ctx, "failed to create session", "err", err)
+		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, "failed to create session")
 	}
 
@@ -107,7 +104,7 @@ func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 		return nil, status.Errorf(codes.InvalidArgument, "request validation failed")
 	}
 	if err := s.sessionService.RevokeSession(ctx, refreshToken.GetRefreshToken()); err != nil {
-		s.log.ErrorContext(ctx, "logout failed", "err", err)
+		s.log.ErrorContext(ctx, "logout failed", model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Internal, "logout failed")
 	}
 
@@ -119,17 +116,11 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	userData := r.GetAuthData()
 	if userData == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")
-		return nil, status.Errorf(
-			codes.InvalidArgument,
-			"request validation failed: check if both Login and Password are filled")
-	} else {
-		if userData.Login == nil || userData.Password == nil {
-			s.log.ErrorContext(ctx,
-				"request validation failed: invalid login or password")
-			return nil, status.Errorf(
-				codes.InvalidArgument,
-				"request validation failed: check if both Login and Password are filled")
-		}
+		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
+	} else if userData.Login == nil || userData.Password == nil {
+		s.log.ErrorContext(ctx,
+			"request validation failed: invalid login or password")
+		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
 	}
 
 	const msgRegistrationFailed = "registration failed, try again"
@@ -138,7 +129,7 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	if _, err := s.repo.FindByLogin(ctx1, userData.GetLogin()); err == nil {
 		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
 	} else if !errors.Is(err, model.ErrNotFound) {
-		s.log.ErrorContext(ctx, "failed to check login existence", "err", err)
+		s.log.ErrorContext(ctx, "failed to check login existence", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
@@ -146,7 +137,7 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	defer cancel2()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
 	if err != nil {
-		s.log.ErrorContext(ctx, "failed to hash password", "err", err)
+		s.log.ErrorContext(ctx, "failed to hash password", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 	userID, err := s.repo.Create(ctx2, &model.User{
@@ -154,13 +145,13 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		PasswordHash: passwordHash,
 	})
 	if err != nil {
-		s.log.ErrorContext(ctx, "failed to create user", "err", err)
+		s.log.ErrorContext(ctx, "failed to create user", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
 	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
 	if err != nil {
-		s.log.ErrorContext(ctx, "failed to create session", "err", err)
+		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Internal, msgRegistrationFailed)
 	}
 	resp := &authpb.RegisterResponse{

@@ -36,7 +36,7 @@ type KeeperClient interface {
 	// Sync — потоковый RPC для синхронизации данных между клиентом и сервером.
 	// Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
 	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SyncResponse], error)
-	// Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
+	// Add — добавляет новый объект данных. Возвращает идентификатор (единственное заполненное поле в объекте metadata).
 	Add(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[AddRequest, AddResponse], error)
 	// List — возвращает список метаданных доступных данных пользователя.
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
@@ -136,7 +136,7 @@ type KeeperServer interface {
 	// Sync — потоковый RPC для синхронизации данных между клиентом и сервером.
 	// Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
 	Sync(*SyncRequest, grpc.ServerStreamingServer[SyncResponse]) error
-	// Add — добавляет новый объект данных. Возвращает пустой ответ при успехе.
+	// Add — добавляет новый объект данных. Возвращает идентификатор (единственное заполненное поле в объекте metadata).
 	Add(grpc.ClientStreamingServer[AddRequest, AddResponse]) error
 	// List — возвращает список метаданных доступных данных пользователя.
 	List(context.Context, *ListRequest) (*ListResponse, error)

@@ -16,6 +16,8 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/model"
 )
 
+const MsgEmptyUserID = "empty userID"
+
 // Service реализует операции управления зашифрованными данными:
 // запись, чтение, удаление и синхронизацию.
 // Сервис обращается к репозиторию объектов (ObjectRepo)
@@ -83,8 +85,8 @@ type ObjectLocator string
 // MetaLoc связывает доменные метаданные и локатор объекта.
 // Используется при выборках списков объектов.
 type MetaLoc struct {
-	Meta    model.Metadata
 	Locator ObjectLocator
+	Meta    model.Metadata
 }
 
 // StreamCallback вызывается сервисом при выдаче объекта наружу.
@@ -110,7 +112,7 @@ func (s *Service) AddSealed(ctx context.Context,
 	sealed []byte,
 ) (model.DataID, error) {
 	if userID == "" {
-		return 0, errors.New("empty userID")
+		return 0, errors.New(MsgEmptyUserID)
 	}
 	if meta == nil {
 		return 0, errors.New("nil metadata")
@@ -155,7 +157,7 @@ func (s *Service) GetSealed(ctx context.Context,
 	cb StreamCallback,
 ) (err error) {
 	if userID == "" {
-		return errors.New("empty userID")
+		return errors.New(MsgEmptyUserID)
 	}
 	if id == 0 {
 		return errors.New("empty id")
@@ -170,7 +172,6 @@ func (s *Service) GetSealed(ctx context.Context,
 
 	sealed, err := s.getSealedHelper(ctx, loc)
 	if err != nil {
-		//nolint:wrapcheck // err from helper function
 		return err
 	}
 
@@ -183,7 +184,7 @@ func (s *Service) GetSealed(ctx context.Context,
 // List возвращает список всех метаданных пользователя вместе с локаторами объектов.
 func (s *Service) List(ctx context.Context, userID model.UserID) ([]MetaLoc, error) {
 	if userID == "" {
-		return nil, errors.New("empty userID")
+		return nil, errors.New(MsgEmptyUserID)
 	}
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
@@ -198,7 +199,7 @@ func (s *Service) List(ctx context.Context, userID model.UserID) ([]MetaLoc, err
 // Delete удаляет объект и его метаданные по идентификатору.
 func (s *Service) Delete(ctx context.Context, userID model.UserID, id model.DataID) error {
 	if userID == "" {
-		return errors.New("empty userID")
+		return errors.New(MsgEmptyUserID)
 	}
 	if id == 0 {
 		return errors.New("empty id")
@@ -225,7 +226,7 @@ func (s *Service) Sync(ctx context.Context,
 	userID model.UserID, mode SyncMode, cb StreamCallback,
 ) error {
 	if userID == "" {
-		return errors.New("empty userID")
+		return errors.New(MsgEmptyUserID)
 	}
 
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
@@ -246,7 +247,6 @@ func (s *Service) Sync(ctx context.Context,
 		case SyncModeShort:
 			sealed, err := s.getSealedHelper(ctx, metaLocs[i].Locator)
 			if err != nil {
-				//nolint:wrapcheck // err from helper function
 				return err
 			}
 

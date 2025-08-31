@@ -232,6 +232,7 @@ func (x *AddRequest) GetPayload() *common.Payload {
 // Ответ сервера на запрос добавления объекта данных.
 type AddResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metadata      *metadata.Metadata     `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -264,6 +265,13 @@ func (x *AddResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AddResponse.ProtoReflect.Descriptor instead.
 func (*AddResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_keeper_keeper_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AddResponse) GetMetadata() *metadata.Metadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
 }
 
 // Запрос получения объекта данных по метаданным.
@@ -545,8 +553,9 @@ const file_proto_v1_keeper_keeper_proto_rawDesc = "" +
 	"\n" +
 	"AddRequest\x12<\n" +
 	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\x127\n" +
-	"\apayload\x18\x02 \x01(\v2\x1d.gophkeeper.v1.common.PayloadR\apayload\"\r\n" +
-	"\vAddResponse\"J\n" +
+	"\apayload\x18\x02 \x01(\v2\x1d.gophkeeper.v1.common.PayloadR\apayload\"K\n" +
+	"\vAddResponse\x12<\n" +
+	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\"J\n" +
 	"\n" +
 	"GetRequest\x12<\n" +
 	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\"\x84\x01\n" +
@@ -601,26 +610,27 @@ var file_proto_v1_keeper_keeper_proto_depIdxs = []int32{
 	12, // 2: gophkeeper.v1.keeper.SyncResponse.payload:type_name -> gophkeeper.v1.common.Payload
 	11, // 3: gophkeeper.v1.keeper.AddRequest.metadata:type_name -> gophkeeper.v1.metadata.Metadata
 	12, // 4: gophkeeper.v1.keeper.AddRequest.payload:type_name -> gophkeeper.v1.common.Payload
-	11, // 5: gophkeeper.v1.keeper.GetRequest.metadata:type_name -> gophkeeper.v1.metadata.Metadata
-	11, // 6: gophkeeper.v1.keeper.GetResponse.metadata:type_name -> gophkeeper.v1.metadata.Metadata
-	12, // 7: gophkeeper.v1.keeper.GetResponse.payload:type_name -> gophkeeper.v1.common.Payload
-	11, // 8: gophkeeper.v1.keeper.DeleteRequest.metadata:type_name -> gophkeeper.v1.metadata.Metadata
-	11, // 9: gophkeeper.v1.keeper.ListResponse.metadata:type_name -> gophkeeper.v1.metadata.Metadata
-	1,  // 10: gophkeeper.v1.keeper.Keeper.Sync:input_type -> gophkeeper.v1.keeper.SyncRequest
-	3,  // 11: gophkeeper.v1.keeper.Keeper.Add:input_type -> gophkeeper.v1.keeper.AddRequest
-	9,  // 12: gophkeeper.v1.keeper.Keeper.List:input_type -> gophkeeper.v1.keeper.ListRequest
-	5,  // 13: gophkeeper.v1.keeper.Keeper.Get:input_type -> gophkeeper.v1.keeper.GetRequest
-	7,  // 14: gophkeeper.v1.keeper.Keeper.Delete:input_type -> gophkeeper.v1.keeper.DeleteRequest
-	2,  // 15: gophkeeper.v1.keeper.Keeper.Sync:output_type -> gophkeeper.v1.keeper.SyncResponse
-	4,  // 16: gophkeeper.v1.keeper.Keeper.Add:output_type -> gophkeeper.v1.keeper.AddResponse
-	10, // 17: gophkeeper.v1.keeper.Keeper.List:output_type -> gophkeeper.v1.keeper.ListResponse
-	6,  // 18: gophkeeper.v1.keeper.Keeper.Get:output_type -> gophkeeper.v1.keeper.GetResponse
-	8,  // 19: gophkeeper.v1.keeper.Keeper.Delete:output_type -> gophkeeper.v1.keeper.DeleteResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	11, // 5: gophkeeper.v1.keeper.AddResponse.metadata:type_name -> gophkeeper.v1.metadata.Metadata
+	11, // 6: gophkeeper.v1.keeper.GetRequest.metadata:type_name -> gophkeeper.v1.metadata.Metadata
+	11, // 7: gophkeeper.v1.keeper.GetResponse.metadata:type_name -> gophkeeper.v1.metadata.Metadata
+	12, // 8: gophkeeper.v1.keeper.GetResponse.payload:type_name -> gophkeeper.v1.common.Payload
+	11, // 9: gophkeeper.v1.keeper.DeleteRequest.metadata:type_name -> gophkeeper.v1.metadata.Metadata
+	11, // 10: gophkeeper.v1.keeper.ListResponse.metadata:type_name -> gophkeeper.v1.metadata.Metadata
+	1,  // 11: gophkeeper.v1.keeper.Keeper.Sync:input_type -> gophkeeper.v1.keeper.SyncRequest
+	3,  // 12: gophkeeper.v1.keeper.Keeper.Add:input_type -> gophkeeper.v1.keeper.AddRequest
+	9,  // 13: gophkeeper.v1.keeper.Keeper.List:input_type -> gophkeeper.v1.keeper.ListRequest
+	5,  // 14: gophkeeper.v1.keeper.Keeper.Get:input_type -> gophkeeper.v1.keeper.GetRequest
+	7,  // 15: gophkeeper.v1.keeper.Keeper.Delete:input_type -> gophkeeper.v1.keeper.DeleteRequest
+	2,  // 16: gophkeeper.v1.keeper.Keeper.Sync:output_type -> gophkeeper.v1.keeper.SyncResponse
+	4,  // 17: gophkeeper.v1.keeper.Keeper.Add:output_type -> gophkeeper.v1.keeper.AddResponse
+	10, // 18: gophkeeper.v1.keeper.Keeper.List:output_type -> gophkeeper.v1.keeper.ListResponse
+	6,  // 19: gophkeeper.v1.keeper.Keeper.Get:output_type -> gophkeeper.v1.keeper.GetResponse
+	8,  // 20: gophkeeper.v1.keeper.Keeper.Delete:output_type -> gophkeeper.v1.keeper.DeleteResponse
+	16, // [16:21] is the sub-list for method output_type
+	11, // [11:16] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_proto_v1_keeper_keeper_proto_init() }

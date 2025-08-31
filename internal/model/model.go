@@ -21,19 +21,19 @@ const (
 )
 
 type Metadata struct {
-	ID            DataID
-	UserID        UserID
-	DataType      DataType
-	Name          string
-	Description   string
 	CreatedAt     time.Time
 	ChunkMetadata *ChunkMetadata
+	UserID        UserID
+	Name          string
+	Description   string
+	ID            DataID
+	DataType      DataType
 }
 
 type ChunkMetadata struct {
+	ObjectSHA256 []byte
 	Offset       uint64
 	ObjectSize   uint64
-	Last         bool
 	CRC32C       uint32
-	ObjectSHA256 []byte
+	Last         bool
 }

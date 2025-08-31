@@ -7,8 +7,8 @@
 package agent
 
 import (
-	common "github.com/talx-hub/gophkeeper/internal/api/v1/common"
-	metadata "github.com/talx-hub/gophkeeper/internal/api/v1/metadata"
+	common "github.com/talx-hub/gophkeeper/proto/v1/common"
+	metadata "github.com/talx-hub/gophkeeper/proto/v1/metadata"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -32,7 +32,7 @@ type UnencryptedData struct {
 	//
 	//	*UnencryptedData_AuthData
 	//	*UnencryptedData_CardInfo
-	//	*UnencryptedData_BytesChunk
+	//	*UnencryptedData_Payload
 	Type          isUnencryptedData_Type `protobuf_oneof:"type"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -100,10 +100,10 @@ func (x *UnencryptedData) GetCardInfo() *CardInfo {
 	return nil
 }
 
-func (x *UnencryptedData) GetBytesChunk() *common.BytesChunk {
+func (x *UnencryptedData) GetPayload() *common.Payload {
 	if x != nil {
-		if x, ok := x.Type.(*UnencryptedData_BytesChunk); ok {
-			return x.BytesChunk
+		if x, ok := x.Type.(*UnencryptedData_Payload); ok {
+			return x.Payload
 		}
 	}
 	return nil
@@ -121,15 +121,15 @@ type UnencryptedData_CardInfo struct {
 	CardInfo *CardInfo `protobuf:"bytes,3,opt,name=card_info,json=cardInfo,oneof"` // данные банковских карт
 }
 
-type UnencryptedData_BytesChunk struct {
-	BytesChunk *common.BytesChunk `protobuf:"bytes,4,opt,name=bytes_chunk,json=bytesChunk,oneof"` // часть бинарного файла
+type UnencryptedData_Payload struct {
+	Payload *common.Payload `protobuf:"bytes,4,opt,name=payload,oneof"` // часть бинарного файла
 }
 
 func (*UnencryptedData_AuthData) isUnencryptedData_Type() {}
 
 func (*UnencryptedData_CardInfo) isUnencryptedData_Type() {}
 
-func (*UnencryptedData_BytesChunk) isUnencryptedData_Type() {}
+func (*UnencryptedData_Payload) isUnencryptedData_Type() {}
 
 // Данные сайтов или сервисов: логин и пароль.
 type AuthData struct {
@@ -249,13 +249,12 @@ var File_proto_v1_agent_agent_proto protoreflect.FileDescriptor
 
 const file_proto_v1_agent_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a proto/v1/metadata/metadata.proto\x1a\x1cproto/v1/common/common.proto\"\x98\x02\n" +
+	"\x1aproto/v1/agent/agent.proto\x12\x13gophkeeper.v1.agent\x1a proto/v1/metadata/metadata.proto\x1a\x1cproto/v1/common/common.proto\"\x8e\x02\n" +
 	"\x0fUnencryptedData\x12<\n" +
 	"\bmetadata\x18\x01 \x01(\v2 .gophkeeper.v1.metadata.MetadataR\bmetadata\x12<\n" +
 	"\tauth_data\x18\x02 \x01(\v2\x1d.gophkeeper.v1.agent.AuthDataH\x00R\bauthData\x12<\n" +
-	"\tcard_info\x18\x03 \x01(\v2\x1d.gophkeeper.v1.agent.CardInfoH\x00R\bcardInfo\x12C\n" +
-	"\vbytes_chunk\x18\x04 \x01(\v2 .gophkeeper.v1.common.BytesChunkH\x00R\n" +
-	"bytesChunkB\x06\n" +
+	"\tcard_info\x18\x03 \x01(\v2\x1d.gophkeeper.v1.agent.CardInfoH\x00R\bcardInfo\x129\n" +
+	"\apayload\x18\x04 \x01(\v2\x1d.gophkeeper.v1.common.PayloadH\x00R\apayloadB\x06\n" +
 	"\x04type\"B\n" +
 	"\bAuthData\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
@@ -284,13 +283,13 @@ var file_proto_v1_agent_agent_proto_goTypes = []any{
 	(*AuthData)(nil),          // 1: gophkeeper.v1.agent.AuthData
 	(*CardInfo)(nil),          // 2: gophkeeper.v1.agent.CardInfo
 	(*metadata.Metadata)(nil), // 3: gophkeeper.v1.metadata.Metadata
-	(*common.BytesChunk)(nil), // 4: gophkeeper.v1.common.BytesChunk
+	(*common.Payload)(nil),    // 4: gophkeeper.v1.common.Payload
 }
 var file_proto_v1_agent_agent_proto_depIdxs = []int32{
 	3, // 0: gophkeeper.v1.agent.UnencryptedData.metadata:type_name -> gophkeeper.v1.metadata.Metadata
 	1, // 1: gophkeeper.v1.agent.UnencryptedData.auth_data:type_name -> gophkeeper.v1.agent.AuthData
 	2, // 2: gophkeeper.v1.agent.UnencryptedData.card_info:type_name -> gophkeeper.v1.agent.CardInfo
-	4, // 3: gophkeeper.v1.agent.UnencryptedData.bytes_chunk:type_name -> gophkeeper.v1.common.BytesChunk
+	4, // 3: gophkeeper.v1.agent.UnencryptedData.payload:type_name -> gophkeeper.v1.common.Payload
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -306,7 +305,7 @@ func file_proto_v1_agent_agent_proto_init() {
 	file_proto_v1_agent_agent_proto_msgTypes[0].OneofWrappers = []any{
 		(*UnencryptedData_AuthData)(nil),
 		(*UnencryptedData_CardInfo)(nil),
-		(*UnencryptedData_BytesChunk)(nil),
+		(*UnencryptedData_Payload)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
