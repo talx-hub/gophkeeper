@@ -148,3 +148,43 @@ func (s *sessionMockBuilder) WithRevokeSession() *sessionMockBuilder {
 
 	return s
 }
+
+type useCaseMockBuilder struct {
+	usecase *mocks.MockKeeperUseCase
+}
+
+func newUseCaseMockBuilder(t *testing.T) *useCaseMockBuilder {
+	t.Helper()
+
+	useCase := mocks.NewMockKeeperUseCase(t)
+	t.Cleanup(func() {
+		useCase.AssertExpectations(t)
+	})
+
+	return &useCaseMockBuilder{
+		usecase: useCase,
+	}
+}
+
+func (b *useCaseMockBuilder) Build() *mocks.MockKeeperUseCase {
+	return b.usecase
+}
+
+func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
+	b.usecase.EXPECT().
+		AddSealed(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(
+			func(
+				ctx context.Context,
+				userID model.UserID,
+				meta *model.Metadata,
+				sealed []byte,
+			) (model.DataID, error) {
+				if userID == "error" {
+					return model.DataID(0), errors.New("expected error")
+				}
+				return model.DataID(42), nil
+			})
+
+	return b
+}

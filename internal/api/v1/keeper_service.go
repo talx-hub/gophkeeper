@@ -34,7 +34,7 @@ const KeyLoggerUserID = "user_id"
 
 // KeeperGRPCService реализует keeperpb.KeeperServer.
 // Хэндлеры валидируют вход, извлекают userID из контекста,
-// конвертируют типы и вызывают use-case. Ошибки маппятся в gRPC-коды.
+// конвертируют типы и вызывают use-case. Ошибки отображаются в gRPC-коды.
 type KeeperGRPCService struct {
 	keeperpb.UnimplementedKeeperServer
 	keeperUseCase KeeperUseCase
@@ -63,56 +63,17 @@ type KeeperUseCase interface {
 	// AddSealed добавляет объект (sealed bytes) с метаданными.
 	AddSealed(ctx context.Context, userID model.UserID, meta *model.Metadata, sealed []byte) (model.DataID, error)
 
+	// Delete удаляет объект и его метаданные.
+	Delete(ctx context.Context, userID model.UserID, id model.DataID) error
+
 	// GetSealed получает объект по id и отправляет его наружу через callback (возможен поток чанков).
 	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error
 
 	// List возвращает список метаданных для секретов пользователя.
 	List(ctx context.Context, userID model.UserID) ([]keeper.MetaLoc, error)
 
-	// Delete удаляет объект и его метаданные.
-	Delete(ctx context.Context, userID model.UserID, id model.DataID) error
-
 	// Sync синхронизирует данные пользователя (метаданные и/или payload) через callback.
 	Sync(ctx context.Context, userID model.UserID, mode keeper.SyncMode, callback keeper.StreamCallback) error
-}
-
-// Sync обрабатывает серверный стрим синхронизации.
-// В зависимости от режима (SHORT/FULL) use-case формирует поток ответов,
-// а хэндлер отправляет их в gRPC-стрим.
-func (s *KeeperGRPCService) Sync(
-	req *keeperpb.SyncRequest, stream grpc.ServerStreamingServer[keeperpb.SyncResponse],
-) error {
-	ctx := stream.Context()
-	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
-	if !ok || userID == "" {
-		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
-		s.log.ErrorContext(ctx, MsgConversionFailed,
-			KeyLoggerActualType, actualType)
-		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
-	}
-
-	mode := keeper.SyncModeShort
-	if req.GetSyncMode() == keeperpb.SyncRequest_SYNC_MODE_FULL {
-		mode = keeper.SyncModeFull
-	}
-
-	// запускаем use-case -- он питюкает в stream через коллбек
-	err := s.keeperUseCase.Sync(ctx, userID, mode,
-		func(m *model.Metadata, sealed []byte) error {
-			return stream.Send(
-				&keeperpb.SyncResponse{
-					Metadata: metadata.ToProtoMetadata(m),
-					Payload:  &commonpb.Payload{SealedData: sealed},
-				})
-		})
-	if err != nil {
-		s.log.ErrorContext(ctx,
-			MsgSyncFailed,
-			KeyLoggerUserID, userID,
-			model.KeyLoggerError, err)
-		return status.Error(codes.Internal, MsgSyncFailed)
-	}
-	return nil
 }
 
 // Add принимает клиентский стрим AddRequest и добавляет объекты.
@@ -128,12 +89,18 @@ func (s *KeeperGRPCService) Add(
 		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
+loop:
 	for {
 		req, err := stream.Recv()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
+		switch {
+		case err == nil:
+		case errors.Is(err, io.EOF):
+			break loop
+		case errors.Is(err, context.Canceled):
+			s.log.InfoContext(ctx, "streaming was interrupted by agent",
+				KeyLoggerUserID, userID, model.KeyLoggerError, err)
+			return status.Error(codes.Canceled, err.Error())
+		default:
 			s.log.ErrorContext(ctx, "recv failed", KeyLoggerUserID, userID, model.KeyLoggerError, err)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
@@ -176,37 +143,36 @@ func (s *KeeperGRPCService) Add(
 	return stream.SendAndClose(&keeperpb.AddResponse{})
 }
 
-// List возвращает список метаданных (без payload) для текущего пользователя.
-func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
-) (*keeperpb.ListResponse, error) {
+// Delete удаляет объект и его метаданные по идентификатору.
+// Требует валидного userID в контексте. При ошибке репозитория
+// возвращает Internal.
+func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequest,
+) (*keeperpb.DeleteResponse, error) {
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
-	if !ok {
-		s.log.ErrorContext(ctx,
-			"failed to convert userID extracted from ctx to model.UserID",
-			"real_type", reflect.TypeOf(userID).String(),
-		)
+	if !ok || userID == "" {
+		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
+		s.log.ErrorContext(ctx, MsgConversionFailed,
+			KeyLoggerActualType, actualType)
+		return nil, status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
+	}
+
+	metaDTO := req.GetMetadata()
+	if metaDTO == nil {
+		s.log.ErrorContext(ctx, "bad metadata: metadata is empty")
 		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
 	}
 
-	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
-	defer cancel()
-	metaLocs, err := s.keeperUseCase.List(ctxTO, userID)
+	err := s.keeperUseCase.Delete(ctx, userID, model.DataID(metaDTO.GetId()))
 	if err != nil {
-		s.log.ErrorContext(ctxTO, "failed to list metadata from Repository",
+		s.log.ErrorContext(ctx,
+			"delete failed",
 			KeyLoggerUserID, userID,
-			model.KeyLoggerError, err,
-		)
-		return nil, status.Error(codes.Internal, "server internal error")
+			"data_id", metaDTO.GetId(),
+			model.KeyLoggerError, err)
+		return nil, status.Error(codes.Internal, "delete failed")
 	}
 
-	listDTO := make([]*metadatapb.Metadata, len(metaLocs))
-	for i, elem := range metaLocs {
-		listDTO[i] = metadata.ToProtoMetadata(&elem.Meta)
-	}
-
-	return &keeperpb.ListResponse{
-		Metadata: listDTO,
-	}, nil
+	return &keeperpb.DeleteResponse{}, nil
 }
 
 // Get отдаёт объект по идентификатору через серверный стрим.
@@ -251,34 +217,74 @@ func (s *KeeperGRPCService) Get(
 	return nil
 }
 
-// Delete удаляет объект и его метаданные по идентификатору.
-// Требует валидного userID в контексте. При ошибке репозитория
-// возвращает Internal.
-func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequest,
-) (*keeperpb.DeleteResponse, error) {
+// List возвращает список метаданных (без payload) для текущего пользователя.
+func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
+) (*keeperpb.ListResponse, error) {
+	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
+	if !ok {
+		s.log.ErrorContext(ctx,
+			"failed to convert userID extracted from ctx to model.UserID",
+			"real_type", reflect.TypeOf(userID).String(),
+		)
+		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
+	}
+
+	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
+	defer cancel()
+	metaLocs, err := s.keeperUseCase.List(ctxTO, userID)
+	if err != nil {
+		s.log.ErrorContext(ctxTO, "failed to list metadata from Repository",
+			KeyLoggerUserID, userID,
+			model.KeyLoggerError, err,
+		)
+		return nil, status.Error(codes.Internal, "server internal error")
+	}
+
+	listDTO := make([]*metadatapb.Metadata, len(metaLocs))
+	for i, elem := range metaLocs {
+		listDTO[i] = metadata.ToProtoMetadata(&elem.Meta)
+	}
+
+	return &keeperpb.ListResponse{
+		Metadata: listDTO,
+	}, nil
+}
+
+// Sync обрабатывает серверный стрим синхронизации.
+// В зависимости от режима (SHORT/FULL) use-case формирует поток ответов,
+// а хэндлер отправляет их в gRPC-стрим.
+func (s *KeeperGRPCService) Sync(
+	req *keeperpb.SyncRequest, stream grpc.ServerStreamingServer[keeperpb.SyncResponse],
+) error {
+	ctx := stream.Context()
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
 		s.log.ErrorContext(ctx, MsgConversionFailed,
 			KeyLoggerActualType, actualType)
-		return nil, status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
+		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
-	metaDTO := req.GetMetadata()
-	if metaDTO == nil {
-		s.log.ErrorContext(ctx, "bad metadata: metadata is empty")
-		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
+	mode := keeper.SyncModeShort
+	if req.GetSyncMode() == keeperpb.SyncRequest_SYNC_MODE_FULL {
+		mode = keeper.SyncModeFull
 	}
 
-	err := s.keeperUseCase.Delete(ctx, userID, model.DataID(metaDTO.GetId()))
+	// запускаем use-case -- он питюкает в stream через коллбек
+	err := s.keeperUseCase.Sync(ctx, userID, mode,
+		func(m *model.Metadata, sealed []byte) error {
+			return stream.Send(
+				&keeperpb.SyncResponse{
+					Metadata: metadata.ToProtoMetadata(m),
+					Payload:  &commonpb.Payload{SealedData: sealed},
+				})
+		})
 	if err != nil {
 		s.log.ErrorContext(ctx,
-			"delete failed",
+			MsgSyncFailed,
 			KeyLoggerUserID, userID,
-			"data_id", metaDTO.GetId(),
 			model.KeyLoggerError, err)
-		return nil, status.Error(codes.Internal, "delete failed")
+		return status.Error(codes.Internal, MsgSyncFailed)
 	}
-
-	return &keeperpb.DeleteResponse{}, nil
+	return nil
 }

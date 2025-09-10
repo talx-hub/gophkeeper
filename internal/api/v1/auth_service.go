@@ -15,6 +15,8 @@ import (
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 )
 
+const MsgRequestValidationFailed = "request validation failed: check if both Login and Password are filled"
+
 type SessionService interface {
 	CreateSession(ctx context.Context, userID model.UserID,
 	) (accessToken string, refreshToken string, err error)
@@ -51,8 +53,6 @@ func NewAuthService(
 		sessionService: session,
 	}
 }
-
-const MsgRequestValidationFailed = "request validation failed: check if both Login and Password are filled"
 
 func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 ) (*authpb.LoginResponse, error) {
