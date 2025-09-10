@@ -168,11 +168,6 @@ func TestKeeperGRPCService_Add(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.WithValue(context.Background(),
 				model.ContextKeyUserID, tt.userID)
-			ctx, cancel := context.WithCancel(ctx)
-			defer cancel()
-			if tt.wantCode == codes.Canceled {
-				cancel()
-			}
 
 			stream := newFakeAddStream(ctx, tt.reqs...)
 			err := service.Add(stream)
@@ -186,7 +181,84 @@ func TestKeeperGRPCService_Add(t *testing.T) {
 }
 
 func TestKeeperGRPCService_Delete(t *testing.T) {
+	tests := []struct {
+		userID       interface{}
+		wantResponse *keeperpb.DeleteResponse
+		request      *keeperpb.DeleteRequest
+		name         string
+		wantCode     codes.Code
+		wantErr      bool
+	}{
+		{
+			name:         "user id empty",
+			request:      nil,
+			wantErr:      true,
+			wantCode:     codes.Unauthenticated,
+			wantResponse: nil,
+		},
+		{
+			name:         "user id conversion failed",
+			userID:       "wrong type",
+			request:      nil,
+			wantErr:      true,
+			wantCode:     codes.Unauthenticated,
+			wantResponse: nil,
+		},
+		{
+			name:   "fail to get metadata",
+			userID: model.UserID("userID"),
+			request: &keeperpb.DeleteRequest{
+				Metadata: nil,
+			},
+			wantErr:      true,
+			wantCode:     codes.InvalidArgument,
+			wantResponse: nil,
+		},
+		{
+			name:   "UseCase delete failed",
+			userID: model.UserID("error"),
+			request: &keeperpb.DeleteRequest{
+				Metadata: &metadatapb.Metadata{
+					DataType: ptr(metadatapb.Metadata_DATA_TYPE_AUTH),
+					Name:     ptr("error"),
+				},
+			},
+			wantErr:      true,
+			wantCode:     codes.Internal,
+			wantResponse: nil,
+		},
+		{
+			name:   "ok",
+			userID: model.UserID("userOK"),
+			request: &keeperpb.DeleteRequest{
+				Metadata: &metadatapb.Metadata{
+					DataType: ptr(metadatapb.Metadata_DATA_TYPE_AUTH),
+					Name:     ptr("name0"),
+				},
+			},
+			wantErr:      false,
+			wantCode:     codes.OK,
+			wantResponse: &keeperpb.DeleteResponse{},
+		},
+	}
 
+	service := KeeperGRPCService{
+		keeperUseCase: newUseCaseMockBuilder(t).WithDelete().Build(),
+		log:           slog.Default(),
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(),
+				model.ContextKeyUserID, tt.userID)
+
+			response, err := service.Delete(ctx, tt.request)
+			if tt.wantErr {
+				require.Error(t, err)
+			}
+			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, tt.wantResponse, response)
+		})
+	}
 }
 
 func TestKeeperGRPCService_Get(t *testing.T) {

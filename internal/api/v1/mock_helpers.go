@@ -188,3 +188,21 @@ func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
 
 	return b
 }
+
+func (b *useCaseMockBuilder) WithDelete() *useCaseMockBuilder {
+	b.usecase.EXPECT().
+		Delete(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(
+			func(
+				ctx context.Context,
+				userID model.UserID,
+				id model.DataID,
+			) error {
+				if userID == "error" {
+					return errors.New("expected error")
+				}
+				return nil
+			})
+
+	return b
+}
