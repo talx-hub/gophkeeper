@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
@@ -162,10 +163,11 @@ func TestKeeperGRPCService_Add(t *testing.T) {
 		},
 	}
 
-	service := KeeperGRPCService{
-		keeperUseCase: newUseCaseMockBuilder(t).WithAddSealed().Build(),
-		log:           slog.Default(),
-	}
+	service := NewKeeperGRPCService(
+		slog.Default(),
+		newUseCaseMockBuilder(t).WithAddSealed().Build(),
+	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.WithValue(context.Background(),
@@ -261,10 +263,10 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 		},
 	}
 
-	service := KeeperGRPCService{
-		keeperUseCase: newUseCaseMockBuilder(t).WithDelete().Build(),
-		log:           slog.Default(),
-	}
+	service := NewKeeperGRPCService(
+		slog.Default(),
+		newUseCaseMockBuilder(t).WithDelete().Build(),
+	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.WithValue(context.Background(),
@@ -371,11 +373,10 @@ func TestKeeperGRPCService_Get(t *testing.T) {
 		},
 	}
 
-	service := KeeperGRPCService{
-		keeperUseCase: newUseCaseMockBuilder(t).WithGetSealed().Build(),
-		log:           slog.Default(),
-	}
-
+	service := NewKeeperGRPCService(
+		slog.Default(),
+		newUseCaseMockBuilder(t).WithGetSealed().Build(),
+	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.WithValue(
@@ -392,7 +393,107 @@ func TestKeeperGRPCService_Get(t *testing.T) {
 }
 
 func TestKeeperGRPCService_List(t *testing.T) {
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
+	tests := []struct {
+		request      *keeperpb.ListRequest
+		userID       interface{}
+		name         string
+		wantErr      bool
+		wantCode     codes.Code
+		wantResponse *keeperpb.ListResponse
+	}{
+		{
+			name:         "user id empty",
+			wantErr:      true,
+			wantCode:     codes.Unauthenticated,
+			wantResponse: nil,
+		},
+		{
+			name:         "user id conversion failed",
+			userID:       "wrong type",
+			wantErr:      true,
+			wantCode:     codes.Unauthenticated,
+			wantResponse: nil,
+		},
+		{
+			name:     "UseCase.List failed",
+			userID:   model.UserID("error"),
+			wantErr:  true,
+			wantCode: codes.Internal,
+		},
+		{
+			name:     "UseCase.List failed: unknown user",
+			userID:   model.UserID("UNKNOWN"),
+			wantErr:  true,
+			wantCode: codes.Internal,
+		},
+		{
+			name:     "ok #1: return no objects",
+			userID:   model.UserID("no-data"),
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponse: &keeperpb.ListResponse{
+				Metadata: []*metadatapb.Metadata{},
+			},
+		},
+		{
+			name:     "ok #2: return single object",
+			userID:   model.UserID("single-data"),
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponse: &keeperpb.ListResponse{
+				Metadata: []*metadatapb.Metadata{
+					{
+						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+						Id:          ptr(int64(dummyID)),
+						Name:        ptr("data1"),
+						Description: ptr(""),
+						CreatedAt:   timestamppb.New(dummyTime),
+					},
+				}},
+		},
+		{
+			name:     "ok #3: return multiple objects",
+			userID:   model.UserID("multiple-data"),
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponse: &keeperpb.ListResponse{
+				Metadata: []*metadatapb.Metadata{
+					{
+						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+						Id:          ptr(int64(dummyID)),
+						Name:        ptr("data1"),
+						Description: ptr(""),
+						CreatedAt:   timestamppb.New(dummyTime),
+					},
+					{
+						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+						Id:          ptr(int64(dummyID)),
+						Name:        ptr("data2"),
+						Description: ptr(""),
+						CreatedAt:   timestamppb.New(dummyTime),
+					},
+				},
+			},
+		},
+	}
 
+	service := NewKeeperGRPCService(
+		slog.Default(),
+		newUseCaseMockBuilder(t).WithList().Build(),
+	)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(),
+				model.ContextKeyUserID, tt.userID)
+			response, err := service.List(ctx, tt.request)
+			if tt.wantErr {
+				require.Error(t, err)
+			}
+			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.True(t, proto.Equal(tt.wantResponse, response))
+		})
+	}
 }
 
 func TestKeeperGRPCService_Sync(t *testing.T) {

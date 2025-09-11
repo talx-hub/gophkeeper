@@ -237,7 +237,7 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 			"failed to convert userID extracted from ctx to model.UserID",
 			"real_type", reflect.TypeOf(userID).String(),
 		)
-		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
+		return nil, status.Error(codes.Unauthenticated, MsgAgentWrong)
 	}
 
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)

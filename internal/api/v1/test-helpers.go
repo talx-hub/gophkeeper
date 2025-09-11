@@ -15,6 +15,7 @@ func ptr[T any](val T) *T {
 }
 
 type fakeAddStream struct {
+	//nolint:containedctx // reason: real stream contains CTX too, need it
 	ctx       context.Context
 	resp      *keeperpb.AddResponse
 	reqs      []*keeperpb.AddRequest

@@ -14,6 +14,7 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/service/keeper"
 )
 
+const msgExpectedError = "expected error"
 const keyDBFail = "db-fail"
 const keyDummyUserID = "dummy-user-id"
 const dummyID = 42
@@ -188,7 +189,7 @@ func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
 				sealed []byte,
 			) (model.DataID, error) {
 				if userID == "error" {
-					return model.DataID(0), errors.New("expected error")
+					return model.DataID(0), errors.New(msgExpectedError)
 				}
 				return model.DataID(dummyID), nil
 			})
@@ -206,7 +207,7 @@ func (b *useCaseMockBuilder) WithDelete() *useCaseMockBuilder {
 				id model.DataID,
 			) error {
 				if userID == "error" {
-					return errors.New("expected error")
+					return errors.New(msgExpectedError)
 				}
 				return nil
 			})
@@ -215,6 +216,8 @@ func (b *useCaseMockBuilder) WithDelete() *useCaseMockBuilder {
 }
 
 func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
+
 	b.usecase.EXPECT().
 		GetSealed(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
@@ -225,10 +228,9 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 				callback keeper.StreamCallback,
 			) error {
 				if userID == "error" {
-					return errors.New("expected error")
+					return errors.New(msgExpectedError)
 				}
 
-				dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 				if err := callback(
 					&model.Metadata{
 						CreatedAt:     dummyTime,
@@ -245,6 +247,67 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 				}
 				return nil
 			})
+
+	return b
+}
+
+func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
+
+	b.usecase.EXPECT().
+		List(mock.Anything, mock.Anything).
+		RunAndReturn(func(
+			ctx context.Context,
+			userID model.UserID,
+		) ([]keeper.MetaLoc, error) {
+			switch userID {
+			case "error":
+				return nil, errors.New(msgExpectedError)
+			case "no-data":
+				return []keeper.MetaLoc{}, nil
+			case "single-data":
+				return []keeper.MetaLoc{
+					{
+						Locator: "pg:/single-data/data1",
+						Meta: model.Metadata{
+							UserID:      "single-data",
+							Name:        "data1",
+							ID:          dummyID,
+							DataType:    model.DataTypeUnspecified,
+							Description: "",
+							CreatedAt:   dummyTime,
+						},
+					},
+				}, nil
+			case "multiple-data":
+				return []keeper.MetaLoc{
+					{
+						Locator: "pg://multiple-data/data1",
+						Meta: model.Metadata{
+							UserID:      "multiple-data",
+							Name:        "data1",
+							ID:          dummyID,
+							DataType:    model.DataTypeUnspecified,
+							Description: "",
+							CreatedAt:   dummyTime,
+						},
+					},
+					{
+						Locator: "s3://multiple-data/data2",
+						Meta: model.Metadata{
+							UserID:      "multiple-data",
+							Name:        "data2",
+							ID:          dummyID,
+							DataType:    model.DataTypeUnspecified,
+							Description: "",
+							CreatedAt:   dummyTime,
+						},
+					},
+				}, nil
+			default:
+				return nil, fmt.Errorf("no such user: %s", userID)
+			}
+		})
 
 	return b
 }
