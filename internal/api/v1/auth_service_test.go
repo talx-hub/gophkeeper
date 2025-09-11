@@ -39,13 +39,13 @@ func TestAuthService_Login(t *testing.T) {
 		},
 		{
 			name:     "invalid: nil password",
-			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr("dummy-user-id"), Password: nil}},
+			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr(keyDummyUserID), Password: nil}},
 			wantErr:  true,
 			wantCode: codes.InvalidArgument,
 		},
 		{
 			name:     "repo error on FindByLogin → Unauthenticated",
-			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr("db-fail"), Password: strPtr("p")}},
+			req:      &authpb.LoginRequest{AuthData: &authpb.AuthData{Login: strPtr(keyDBFail), Password: strPtr("p")}},
 			wantErr:  true,
 			wantCode: codes.Unauthenticated,
 		},
@@ -53,7 +53,7 @@ func TestAuthService_Login(t *testing.T) {
 			name: "wrong password → Unauthenticated",
 			req: &authpb.LoginRequest{
 				AuthData: &authpb.AuthData{
-					Login:    strPtr("dummy-user-id"),
+					Login:    strPtr(keyDummyUserID),
 					Password: strPtr("wrong"),
 				},
 			},
@@ -75,7 +75,7 @@ func TestAuthService_Login(t *testing.T) {
 			name: "success",
 			req: &authpb.LoginRequest{
 				AuthData: &authpb.AuthData{
-					Login:    strPtr("dummy-user-id"),
+					Login:    strPtr(keyDummyUserID),
 					Password: strPtr("very-long-dummy-bytes"),
 				},
 			},
@@ -198,7 +198,7 @@ func TestAuthService_Register(t *testing.T) {
 		{
 			name: "repo findByLogin error not ErrNotFound",
 			req: &authpb.RegisterRequest{
-				AuthData: &authpb.AuthData{Login: strPtr("db-fail"), Password: strPtr("pass")},
+				AuthData: &authpb.AuthData{Login: strPtr(keyDBFail), Password: strPtr("pass")},
 			},
 			wantErr:  true,
 			wantCode: codes.Internal,

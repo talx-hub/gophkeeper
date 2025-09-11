@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	"google.golang.org/grpc/metadata"
@@ -15,22 +14,22 @@ func ptr[T any](val T) *T {
 	return &val
 }
 
-type fakeAddServer struct {
+type fakeAddStream struct {
 	ctx       context.Context
+	resp      *keeperpb.AddResponse
 	reqs      []*keeperpb.AddRequest
 	i         int
-	resp      *keeperpb.AddResponse
 	sentClose bool
 }
 
-func newFakeAddStream(ctx context.Context, reqs ...*keeperpb.AddRequest) *fakeAddServer {
-	return &fakeAddServer{
+func newFakeAddStream(ctx context.Context, reqs ...*keeperpb.AddRequest) *fakeAddStream {
+	return &fakeAddStream{
 		ctx:  ctx,
 		reqs: reqs,
 	}
 }
 
-func (f *fakeAddServer) Recv() (*keeperpb.AddRequest, error) {
+func (f *fakeAddStream) Recv() (*keeperpb.AddRequest, error) {
 	if f.reqs == nil {
 		return nil, errors.New("[]requests is nil")
 	}
@@ -43,31 +42,32 @@ func (f *fakeAddServer) Recv() (*keeperpb.AddRequest, error) {
 	return r, nil
 }
 
-func (f *fakeAddServer) SendAndClose(resp *keeperpb.AddResponse) error {
+func (f *fakeAddStream) SendAndClose(resp *keeperpb.AddResponse) error {
 	if f.sentClose {
-		return fmt.Errorf("SendAndClose called twice")
+		return errors.New("SendAndClose called twice")
 	}
 	f.sentClose = true
 	f.resp = resp
 	return nil
 }
 
-func (f *fakeAddServer) Context() context.Context { return f.ctx }
+func (f *fakeAddStream) Context() context.Context { return f.ctx }
 
-func (f *fakeAddServer) SetHeader(_ metadata.MD) error {
+func (f *fakeAddStream) SetHeader(_ metadata.MD) error {
 	return nil
 }
-func (f *fakeAddServer) SendHeader(_ metadata.MD) error {
+func (f *fakeAddStream) SendHeader(_ metadata.MD) error {
 	return nil
 }
-func (f *fakeAddServer) SetTrailer(_ metadata.MD) {
+func (f *fakeAddStream) SetTrailer(_ metadata.MD) {
 }
 
-func (f *fakeAddServer) SendMsg(_ interface{}) error { return nil }
+func (f *fakeAddStream) SendMsg(_ interface{}) error { return nil }
 
-func (f *fakeAddServer) RecvMsg(_ interface{}) error { return nil }
+func (f *fakeAddStream) RecvMsg(_ interface{}) error { return nil }
 
 type fakeGetStream struct {
+	//nolint:containedctx // reason: real stream contains CTX too, need it
 	ctx       context.Context
 	responses []*keeperpb.GetResponse
 }
@@ -83,31 +83,25 @@ func (f *fakeGetStream) Send(response *keeperpb.GetResponse) error {
 	return nil
 }
 
-func (f *fakeGetStream) SetHeader(md metadata.MD) error {
-	//TODO implement me
-	panic("implement me")
+func (f *fakeGetStream) SetHeader(_ metadata.MD) error {
+	return nil
 }
 
-func (f *fakeGetStream) SendHeader(md metadata.MD) error {
-	//TODO implement me
-	panic("implement me")
+func (f *fakeGetStream) SendHeader(_ metadata.MD) error {
+	return nil
 }
 
-func (f *fakeGetStream) SetTrailer(md metadata.MD) {
-	//TODO implement me
-	panic("implement me")
+func (f *fakeGetStream) SetTrailer(_ metadata.MD) {
 }
 
 func (f *fakeGetStream) Context() context.Context {
 	return f.ctx
 }
 
-func (f *fakeGetStream) SendMsg(m any) error {
-	//TODO implement me
-	panic("implement me")
+func (f *fakeGetStream) SendMsg(_ any) error {
+	return nil
 }
 
-func (f *fakeGetStream) RecvMsg(m any) error {
-	//TODO implement me
-	panic("implement me")
+func (f *fakeGetStream) RecvMsg(_ any) error {
+	return nil
 }

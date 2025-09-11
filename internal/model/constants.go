@@ -7,7 +7,9 @@ import (
 
 const RepoOperationTO = 2 * time.Second
 
-const ContextKeyUserID = "userID"
+type TypeContextKeyUserID string
+
+const ContextKeyUserID = TypeContextKeyUserID("userID")
 
 var ErrNotFound = errors.New("not found")
 

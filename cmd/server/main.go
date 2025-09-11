@@ -42,7 +42,6 @@ func run(address string) error {
 	}
 	return nil
 
-	//log.InfoContext(context.Background(), "stopping gRPC server gracefully...")
-	//log.InfoContext(context.Background(), "successful server graceful shutdown")
-
+	// log.InfoContext(context.Background(), "stopping gRPC server gracefully...")
+	// log.InfoContext(context.Background(), "successful server graceful shutdown")
 }

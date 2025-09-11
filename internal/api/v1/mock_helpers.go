@@ -14,6 +14,10 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/service/keeper"
 )
 
+const keyDBFail = "db-fail"
+const keyDummyUserID = "dummy-user-id"
+const dummyID = 42
+
 type repoMockBuilder struct {
 	repo *mocks.MockUserRepository
 }
@@ -37,7 +41,7 @@ func (b *repoMockBuilder) WithFindByLogin() *repoMockBuilder {
 		FindByLogin(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, login string) (model.User, error) {
 			switch login {
-			case "db-fail":
+			case keyDBFail:
 				return model.User{}, errors.New("db error")
 			case "new-user", "not-found", "create-fail", "session-fail-register":
 				return model.User{}, model.ErrNotFound
@@ -72,7 +76,7 @@ func (b *repoMockBuilder) WithFindByID() *repoMockBuilder {
 	b.repo.EXPECT().
 		FindByID(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, uuid model.UserID) (model.User, error) {
-			if uuid == "db-fail" {
+			if uuid == keyDBFail {
 				return model.User{}, errors.New("db error")
 			}
 			if uuid == "not-found" {
@@ -93,7 +97,7 @@ func (b *repoMockBuilder) WithDelete() *repoMockBuilder {
 	b.repo.EXPECT().
 		Delete(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, uuid model.UserID) error {
-			if uuid == "db-fail" {
+			if uuid == keyDBFail {
 				return errors.New("db error")
 			}
 			if uuid == "not-found" {
@@ -127,7 +131,7 @@ func (s *sessionMockBuilder) WithCreateSession() *sessionMockBuilder {
 	s.service.EXPECT().
 		CreateSession(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, userID model.UserID) (string, string, error) {
-			if userID == "dummy-user-id" {
+			if userID == keyDummyUserID {
 				return "valid-jwt", "valid-refresh", nil
 			}
 			if userID == "session-fail" || userID == "session-fail-register" {
@@ -186,7 +190,7 @@ func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
 				if userID == "error" {
 					return model.DataID(0), errors.New("expected error")
 				}
-				return model.DataID(42), nil
+				return model.DataID(dummyID), nil
 			})
 
 	return b
@@ -224,7 +228,7 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 					return errors.New("expected error")
 				}
 
-				dummyTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+				dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 				if err := callback(
 					&model.Metadata{
 						CreatedAt:     dummyTime,
@@ -232,7 +236,7 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 						UserID:        userID,
 						Name:          "dummy name",
 						Description:   "dummy description",
-						ID:            42,
+						ID:            dummyID,
 						DataType:      model.DataTypeUnspecified,
 					},
 					[]byte("dummy secret bytes"),

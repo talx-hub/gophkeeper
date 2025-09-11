@@ -282,7 +282,7 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 
 func TestKeeperGRPCService_Get(t *testing.T) {
 	dummyID := int64(42)
-	dummyTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 	correctResponse := &keeperpb.GetResponse{
 		Metadata: &metadatapb.Metadata{
 			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
