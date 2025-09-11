@@ -89,6 +89,7 @@ func (s *KeeperGRPCService) Add(
 		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
+	var requests []*keeperpb.AddRequest
 loop:
 	for {
 		req, err := stream.Recv()
@@ -104,7 +105,10 @@ loop:
 			s.log.ErrorContext(ctx, "recv failed", KeyLoggerUserID, userID, model.KeyLoggerError, err)
 			return status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 		}
+		requests = append(requests, req)
+	}
 
+	for _, req := range requests {
 		metaDTO := req.GetMetadata()
 		if metaDTO == nil {
 			s.log.ErrorContext(ctx, "bad metadata: metadata is empty", KeyLoggerUserID, userID)
@@ -268,6 +272,11 @@ func (s *KeeperGRPCService) Sync(
 	req *keeperpb.SyncRequest, stream grpc.ServerStreamingServer[keeperpb.SyncResponse],
 ) error {
 	ctx := stream.Context()
+	if req == nil {
+		s.log.ErrorContext(ctx, "sync request is <nil>")
+		return status.Error(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
@@ -276,9 +285,16 @@ func (s *KeeperGRPCService) Sync(
 		return status.Error(codes.Unauthenticated, MsgUserNotAuthenticated)
 	}
 
-	mode := keeper.SyncModeShort
-	if req.GetSyncMode() == keeperpb.SyncRequest_SYNC_MODE_FULL {
+	var mode keeper.SyncMode
+	switch req.GetSyncMode() {
+	case keeperpb.SyncRequest_SYNC_MODE_SHORT:
+		mode = keeper.SyncModeShort
+	case keeperpb.SyncRequest_SYNC_MODE_FULL:
 		mode = keeper.SyncModeFull
+	default:
+		msg := "unknown sync mode"
+		s.log.ErrorContext(ctx, msg)
+		return status.Error(codes.InvalidArgument, msg)
 	}
 
 	// запускаем use-case -- он питюкает в stream через коллбек

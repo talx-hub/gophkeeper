@@ -311,3 +311,47 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 
 	return b
 }
+
+func (b *useCaseMockBuilder) WithSync() *useCaseMockBuilder {
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
+
+	b.usecase.EXPECT().
+		Sync(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(
+			ctx context.Context,
+			userID model.UserID,
+			mode keeper.SyncMode,
+			callback keeper.StreamCallback,
+		) error {
+			if userID == "error" {
+				return errors.New(msgExpectedError)
+			}
+
+			metadata := &model.Metadata{
+				CreatedAt:     dummyTime,
+				ChunkMetadata: nil,
+				UserID:        userID,
+				Name:          "dummy name",
+				Description:   "dummy description",
+				ID:            dummyID,
+				DataType:      model.DataTypeUnspecified,
+			}
+
+			var err error
+			switch mode {
+			case keeper.SyncModeShort:
+				err = callback(metadata, nil)
+			case keeper.SyncModeFull:
+				err = callback(metadata, []byte("dummy secret bytes"))
+			default:
+				return fmt.Errorf("unknown  sync mode: %d", mode)
+			}
+
+			if err != nil {
+				return fmt.Errorf("callback failed: %w", err)
+			}
+			return nil
+		})
+
+	return b
+}

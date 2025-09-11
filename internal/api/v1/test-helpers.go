@@ -106,3 +106,43 @@ func (f *fakeGetStream) SendMsg(_ any) error {
 func (f *fakeGetStream) RecvMsg(_ any) error {
 	return nil
 }
+
+type fakeSyncStream struct {
+	//nolint:containedctx // reason: real stream contains CTX too, need it
+	ctx       context.Context
+	responses []*keeperpb.SyncResponse
+}
+
+func newFakeSyncStream(ctx context.Context) *fakeSyncStream {
+	return &fakeSyncStream{
+		ctx: ctx,
+	}
+}
+
+func (f *fakeSyncStream) Send(response *keeperpb.SyncResponse) error {
+	f.responses = append(f.responses, response)
+	return nil
+}
+
+func (f *fakeSyncStream) SetHeader(_ metadata.MD) error {
+	return nil
+}
+
+func (f *fakeSyncStream) SendHeader(_ metadata.MD) error {
+	return nil
+}
+
+func (f *fakeSyncStream) SetTrailer(_ metadata.MD) {
+}
+
+func (f *fakeSyncStream) Context() context.Context {
+	return f.ctx
+}
+
+func (f *fakeSyncStream) SendMsg(_ any) error {
+	return nil
+}
+
+func (f *fakeSyncStream) RecvMsg(_ any) error {
+	return nil
+}

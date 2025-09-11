@@ -497,5 +497,128 @@ func TestKeeperGRPCService_List(t *testing.T) {
 }
 
 func TestKeeperGRPCService_Sync(t *testing.T) {
+	dummyID := int64(42)
+	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
+	correctResponse := &keeperpb.SyncResponse{
+		Metadata: &metadatapb.Metadata{
+			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:            ptr(dummyID),
+			Name:          ptr("dummy name"),
+			Description:   ptr("dummy description"),
+			CreatedAt:     timestamppb.New(dummyTime),
+			ChunkMetadata: nil,
+		},
+		Payload: &commonpb.Payload{SealedData: nil},
+	}
+	correctResponseWithPayload := &keeperpb.SyncResponse{
+		Metadata: &metadatapb.Metadata{
+			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:            ptr(dummyID),
+			Name:          ptr("dummy name"),
+			Description:   ptr("dummy description"),
+			CreatedAt:     timestamppb.New(dummyTime),
+			ChunkMetadata: nil,
+		},
+		Payload: &commonpb.Payload{
+			SealedData: []byte("dummy secret bytes"),
+		},
+	}
 
+	tests := []struct {
+		request       *keeperpb.SyncRequest
+		userID        interface{}
+		name          string
+		wantErr       bool
+		wantCode      codes.Code
+		wantResponses []*keeperpb.SyncResponse
+	}{
+		{
+			name:          "nil request",
+			request:       nil,
+			wantErr:       true,
+			wantCode:      codes.InvalidArgument,
+			wantResponses: nil,
+		},
+		{
+			name: "user id empty",
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_FULL),
+			},
+			wantErr:       true,
+			wantCode:      codes.Unauthenticated,
+			wantResponses: nil,
+		},
+		{
+			name:   "user id conversion failed",
+			userID: "wrong type",
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_SHORT),
+			},
+			wantErr:       true,
+			wantCode:      codes.Unauthenticated,
+			wantResponses: nil,
+		},
+		{
+			name:   "fail to sync: unknown sync mode",
+			userID: model.UserID("userID"),
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_UNSPECIFIED),
+			},
+			wantErr:       true,
+			wantCode:      codes.InvalidArgument,
+			wantResponses: nil,
+		},
+		{
+			name:   "UseCase.Sync failed",
+			userID: model.UserID("error"),
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_SHORT),
+			},
+			wantErr:       true,
+			wantCode:      codes.Internal,
+			wantResponses: nil,
+		},
+		{
+			name:   "ok #1: sync mode short",
+			userID: model.UserID("userOK"),
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_SHORT),
+			},
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponses: []*keeperpb.SyncResponse{
+				correctResponse,
+			},
+		},
+		{
+			name:   "ok #2: sync mode full",
+			userID: model.UserID("userOK"),
+			request: &keeperpb.SyncRequest{
+				SyncMode: ptr(keeperpb.SyncRequest_SYNC_MODE_FULL),
+			},
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponses: []*keeperpb.SyncResponse{
+				correctResponseWithPayload,
+			},
+		},
+	}
+
+	service := NewKeeperGRPCService(
+		slog.Default(),
+		newUseCaseMockBuilder(t).WithSync().Build(),
+	)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(
+				context.Background(), model.ContextKeyUserID, tt.userID)
+			stream := newFakeSyncStream(ctx)
+			err := service.Sync(tt.request, stream)
+			if tt.wantErr {
+				require.Error(t, err)
+			}
+			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, tt.wantResponses, stream.responses)
+		})
+	}
 }
