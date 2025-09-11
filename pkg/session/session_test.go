@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/talx-hub/gophkeeper/internal/model"
 	"github.com/talx-hub/gophkeeper/pkg/tokens"
 )
 
@@ -81,7 +82,7 @@ func TestManager_ValidateAccessToken(t *testing.T) {
 		require.NoError(t, err)
 		uid, err := m.ValidateAccessToken(context.Background(), token)
 		require.NoError(t, err)
-		require.Equal(t, "user-123", uid)
+		require.Equal(t, model.UserID("user-123"), uid)
 	})
 
 	t.Run("invalid token", func(t *testing.T) {

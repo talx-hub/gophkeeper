@@ -90,8 +90,6 @@ type MetaLoc struct {
 }
 
 // StreamCallback вызывается сервисом при выдаче объекта наружу.
-// Для малых объектов sealed содержит все данные,
-// для больших в будущем будет вызвано несколько раз по чанкам.
 type StreamCallback func(meta *model.Metadata, sealed []byte) error
 
 // SyncMode задаёт режим синхронизации.

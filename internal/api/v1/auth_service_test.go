@@ -86,6 +86,7 @@ func TestAuthService_Login(t *testing.T) {
 	mockRepo := newRepoMock(t).WithFindByLogin().Build()
 	mockService := newSessionMock(t).WithCreateSession().Build()
 	s := &AuthService{
+		log:            slog.Default(),
 		repo:           mockRepo,
 		sessionService: mockService,
 	}
@@ -137,6 +138,7 @@ func TestAuthService_Logout(t *testing.T) {
 	mockRepo := newRepoMock(t).Build()
 	mockService := newSessionMock(t).WithRevokeSession().Build()
 	s := &AuthService{
+		log:            slog.Default(),
 		repo:           mockRepo,
 		sessionService: mockService,
 	}
@@ -239,6 +241,7 @@ func TestAuthService_Register(t *testing.T) {
 	}
 
 	s := &AuthService{
+		log:            slog.Default(),
 		repo:           newRepoMock(t).WithCreate().WithFindByLogin().Build(),
 		sessionService: newSessionMock(t).WithCreateSession().Build(),
 	}

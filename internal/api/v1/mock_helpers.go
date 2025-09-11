@@ -3,12 +3,15 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 
 	"github.com/talx-hub/gophkeeper/internal/api/v1/mocks"
 	"github.com/talx-hub/gophkeeper/internal/model"
+	"github.com/talx-hub/gophkeeper/internal/service/keeper"
 )
 
 type repoMockBuilder struct {
@@ -200,6 +203,41 @@ func (b *useCaseMockBuilder) WithDelete() *useCaseMockBuilder {
 			) error {
 				if userID == "error" {
 					return errors.New("expected error")
+				}
+				return nil
+			})
+
+	return b
+}
+
+func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
+	b.usecase.EXPECT().
+		GetSealed(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(
+			func(
+				ctx context.Context,
+				userID model.UserID,
+				id model.DataID,
+				callback keeper.StreamCallback,
+			) error {
+				if userID == "error" {
+					return errors.New("expected error")
+				}
+
+				dummyTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+				if err := callback(
+					&model.Metadata{
+						CreatedAt:     dummyTime,
+						ChunkMetadata: nil,
+						UserID:        userID,
+						Name:          "dummy name",
+						Description:   "dummy description",
+						ID:            42,
+						DataType:      model.DataTypeUnspecified,
+					},
+					[]byte("dummy secret bytes"),
+				); err != nil {
+					return fmt.Errorf("callback failed: %w", err)
 				}
 				return nil
 			})

@@ -45,7 +45,7 @@ func TestGenerator_CheckAccessToken(t *testing.T) {
 		require.NoError(t, err)
 		subj, err := g.CheckAccessToken(context.Background(), tokenStr)
 		require.NoError(t, err)
-		require.Equal(t, "user-123", subj)
+		require.Equal(t, model.UserID("user-123"), subj)
 	})
 
 	t.Run("wrong signing algorithm", func(t *testing.T) {

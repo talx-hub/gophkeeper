@@ -148,6 +148,11 @@ loop:
 // возвращает Internal.
 func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequest,
 ) (*keeperpb.DeleteResponse, error) {
+	if req == nil {
+		s.log.ErrorContext(ctx, "delete request is <nil>")
+		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
@@ -183,6 +188,11 @@ func (s *KeeperGRPCService) Get(
 	stream grpc.ServerStreamingServer[keeperpb.GetResponse],
 ) error {
 	ctx := stream.Context()
+	if req == nil {
+		s.log.ErrorContext(ctx, "get request is <nil>")
+		return status.Error(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	userID, ok := ctx.Value(model.ContextKeyUserID).(model.UserID)
 	if !ok || userID == "" {
 		actualType := fmt.Sprintf("%T", ctx.Value(model.ContextKeyUserID))
@@ -200,6 +210,7 @@ func (s *KeeperGRPCService) Get(
 	// запускаем use-case -- он питюкает в stream через коллбек
 	err := s.keeperUseCase.GetSealed(ctx, userID, model.DataID(metaDTO.GetId()),
 		func(m *model.Metadata, sealed []byte) error {
+			//nolint:wrapcheck // reason: error from callback
 			return stream.Send(
 				&keeperpb.GetResponse{
 					Metadata: metadata.ToProtoMetadata(m),

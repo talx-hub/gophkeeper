@@ -56,6 +56,11 @@ func NewAuthService(
 
 func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 ) (*authpb.LoginResponse, error) {
+	if r == nil {
+		s.log.ErrorContext(ctx, "login request is <nil>")
+		return nil, status.Errorf(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	userData := r.GetAuthData()
 	if userData == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")
@@ -98,6 +103,11 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 
 func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 ) (*emptypb.Empty, error) {
+	if r == nil {
+		s.log.ErrorContext(ctx, "logout request is <nil>")
+		return nil, status.Errorf(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	refreshToken := r.GetRefreshToken()
 	if refreshToken == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the refresh uuid is nil")
@@ -113,6 +123,11 @@ func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 
 func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 ) (*authpb.RegisterResponse, error) {
+	if r == nil {
+		s.log.ErrorContext(ctx, "register request is <nil>")
+		return nil, status.Errorf(codes.InvalidArgument, MsgAgentWrong)
+	}
+
 	userData := r.GetAuthData()
 	if userData == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")

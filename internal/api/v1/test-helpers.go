@@ -66,3 +66,48 @@ func (f *fakeAddServer) SetTrailer(_ metadata.MD) {
 func (f *fakeAddServer) SendMsg(_ interface{}) error { return nil }
 
 func (f *fakeAddServer) RecvMsg(_ interface{}) error { return nil }
+
+type fakeGetStream struct {
+	ctx       context.Context
+	responses []*keeperpb.GetResponse
+}
+
+func newFakeGetStream(ctx context.Context) *fakeGetStream {
+	return &fakeGetStream{
+		ctx: ctx,
+	}
+}
+
+func (f *fakeGetStream) Send(response *keeperpb.GetResponse) error {
+	f.responses = append(f.responses, response)
+	return nil
+}
+
+func (f *fakeGetStream) SetHeader(md metadata.MD) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (f *fakeGetStream) SendHeader(md metadata.MD) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (f *fakeGetStream) SetTrailer(md metadata.MD) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (f *fakeGetStream) Context() context.Context {
+	return f.ctx
+}
+
+func (f *fakeGetStream) SendMsg(m any) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (f *fakeGetStream) RecvMsg(m any) error {
+	//TODO implement me
+	panic("implement me")
+}

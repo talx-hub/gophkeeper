@@ -4,11 +4,13 @@ import (
 	"context"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
 	commonpb "github.com/talx-hub/gophkeeper/proto/v1/common"
@@ -190,16 +192,33 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name:         "user id empty",
+			name:         "nil request",
 			request:      nil,
+			wantErr:      true,
+			wantCode:     codes.InvalidArgument,
+			wantResponse: nil,
+		},
+		{
+			name: "user id empty",
+			request: &keeperpb.DeleteRequest{
+				Metadata: &metadatapb.Metadata{
+					DataType: ptr(metadatapb.Metadata_DATA_TYPE_AUTH),
+					Name:     ptr("error"),
+				},
+			},
 			wantErr:      true,
 			wantCode:     codes.Unauthenticated,
 			wantResponse: nil,
 		},
 		{
-			name:         "user id conversion failed",
-			userID:       "wrong type",
-			request:      nil,
+			name:   "user id conversion failed",
+			userID: "wrong type",
+			request: &keeperpb.DeleteRequest{
+				Metadata: &metadatapb.Metadata{
+					DataType: ptr(metadatapb.Metadata_DATA_TYPE_AUTH),
+					Name:     ptr("error"),
+				},
+			},
 			wantErr:      true,
 			wantCode:     codes.Unauthenticated,
 			wantResponse: nil,
@@ -262,7 +281,114 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 }
 
 func TestKeeperGRPCService_Get(t *testing.T) {
+	dummyID := int64(42)
+	dummyTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+	correctResponse := &keeperpb.GetResponse{
+		Metadata: &metadatapb.Metadata{
+			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:            ptr(dummyID),
+			Name:          ptr("dummy name"),
+			Description:   ptr("dummy description"),
+			CreatedAt:     timestamppb.New(dummyTime),
+			ChunkMetadata: nil,
+		},
+		Payload: &commonpb.Payload{
+			SealedData: []byte("dummy secret bytes"),
+		},
+	}
 
+	tests := []struct {
+		request       *keeperpb.GetRequest
+		userID        interface{}
+		name          string
+		wantErr       bool
+		wantCode      codes.Code
+		wantResponses []*keeperpb.GetResponse
+	}{
+		{
+			name:          "nil request",
+			request:       nil,
+			wantErr:       true,
+			wantCode:      codes.InvalidArgument,
+			wantResponses: nil,
+		},
+		{
+			name: "user id empty",
+			request: &keeperpb.GetRequest{
+				Metadata: &metadatapb.Metadata{
+					Id: ptr(dummyID),
+				}},
+			wantErr:       true,
+			wantCode:      codes.Unauthenticated,
+			wantResponses: nil,
+		},
+		{
+			name:   "user id conversion failed",
+			userID: "wrong type",
+			request: &keeperpb.GetRequest{
+				Metadata: &metadatapb.Metadata{
+					Id: ptr(dummyID),
+				}},
+			wantErr:       true,
+			wantCode:      codes.Unauthenticated,
+			wantResponses: nil,
+		},
+		{
+			name:   "fail to get metadata",
+			userID: model.UserID("userID"),
+			request: &keeperpb.GetRequest{
+				Metadata: nil,
+			},
+			wantErr:       true,
+			wantCode:      codes.InvalidArgument,
+			wantResponses: nil,
+		},
+		{
+			name:   "UseCase.Get failed",
+			userID: model.UserID("error"),
+			request: &keeperpb.GetRequest{
+				Metadata: &metadatapb.Metadata{
+					Id: ptr(dummyID),
+				},
+			},
+			wantErr:       true,
+			wantCode:      codes.Internal,
+			wantResponses: nil,
+		},
+		{
+			name:   "ok",
+			userID: model.UserID("userOK"),
+			request: &keeperpb.GetRequest{
+				Metadata: &metadatapb.Metadata{
+					Id: ptr(dummyID),
+				},
+			},
+			wantErr:  false,
+			wantCode: codes.OK,
+			wantResponses: []*keeperpb.GetResponse{
+				correctResponse,
+			},
+		},
+	}
+
+	service := KeeperGRPCService{
+		keeperUseCase: newUseCaseMockBuilder(t).WithGetSealed().Build(),
+		log:           slog.Default(),
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(
+				context.Background(), model.ContextKeyUserID, tt.userID)
+			stream := newFakeGetStream(ctx)
+			err := service.Get(tt.request, stream)
+			if tt.wantErr {
+				require.Error(t, err)
+			}
+			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, tt.wantResponses, stream.responses)
+		})
+	}
 }
 
 func TestKeeperGRPCService_List(t *testing.T) {
