@@ -259,14 +259,14 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 		RunAndReturn(func(
 			ctx context.Context,
 			userID model.UserID,
-		) ([]keeper.MetaLoc, error) {
+		) ([]model.MetaLoc, error) {
 			switch userID {
 			case "error":
 				return nil, errors.New(msgExpectedError)
 			case "no-data":
-				return []keeper.MetaLoc{}, nil
+				return []model.MetaLoc{}, nil
 			case "single-data":
-				return []keeper.MetaLoc{
+				return []model.MetaLoc{
 					{
 						Locator: "pg:/single-data/data1",
 						Meta: model.Metadata{
@@ -280,7 +280,7 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 					},
 				}, nil
 			case "multiple-data":
-				return []keeper.MetaLoc{
+				return []model.MetaLoc{
 					{
 						Locator: "pg://multiple-data/data1",
 						Meta: model.Metadata{

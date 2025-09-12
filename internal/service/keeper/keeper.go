@@ -45,48 +45,30 @@ type ObjectRepo interface {
 	// записанных данных.
 	// Возвращает локатор объекта и фактические сведения о записи.
 	Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte,
-	) (ObjectLocator, ObjectInfo, error)
+	) (model.ObjectLocator, model.ObjectInfo, error)
 
 	// Get возвращает поток для чтения объекта и сведения о нём.
-	Get(ctx context.Context, loc ObjectLocator) (io.ReadCloser, ObjectInfo, error)
+	Get(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, model.ObjectInfo, error)
 
 	// Delete удаляет объект по указанному локатору.
-	Delete(ctx context.Context, loc ObjectLocator) error
+	Delete(ctx context.Context, loc model.ObjectLocator) error
 }
 
 // MetadataRepo абстрагирует работу с метаданными в реляционном хранилище.
 // Содержит операции создания, получения, выборки и удаления.
 type MetadataRepo interface {
 	// Create сохраняет метаданные и связывает их с локатором объекта и сведениями о нём.
-	Create(ctx context.Context, meta *model.Metadata, info ObjectInfo, loc ObjectLocator,
+	Create(ctx context.Context, meta *model.Metadata, info model.ObjectInfo, loc model.ObjectLocator,
 	) (model.DataID, error)
 
 	// Get возвращает метаданные и локатор объекта по userID и DataID.
-	Get(ctx context.Context, userID model.UserID, id model.DataID) (model.Metadata, ObjectLocator, error)
+	Get(ctx context.Context, userID model.UserID, id model.DataID) (model.Metadata, model.ObjectLocator, error)
 
 	// ListByUser возвращает список всех метаданных пользователя вместе с локаторами объектов.
-	ListByUser(ctx context.Context, userID model.UserID) ([]MetaLoc, error)
+	ListByUser(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)
 
 	// Delete удаляет метаданные по userID и DataID и возвращает локатор объекта.
-	Delete(ctx context.Context, userID model.UserID, id model.DataID) (ObjectLocator, error)
-}
-
-// ObjectInfo описывает фактические характеристики объекта,
-// полученные после записи в сторадж.
-type ObjectInfo struct {
-	Size   uint64
-	SHA256 [32]byte
-}
-
-// ObjectLocator — непрозрачный идентификатор местоположения объекта
-// в объектном хранилище (например, "pg://...", "s3://...").
-type ObjectLocator string
-
-// MetaLoc связывает доменные метаданные и локатор объекта.
-// Используется при выборках списков объектов.
-type MetaLoc struct {
-	Locator ObjectLocator
-	Meta    model.Metadata
+	Delete(ctx context.Context, userID model.UserID, id model.DataID) (model.ObjectLocator, error)
 }
 
 // StreamCallback вызывается сервисом при выдаче объекта наружу.
@@ -180,7 +162,7 @@ func (s *Service) GetSealed(ctx context.Context,
 }
 
 // List возвращает список всех метаданных пользователя вместе с локаторами объектов.
-func (s *Service) List(ctx context.Context, userID model.UserID) ([]MetaLoc, error) {
+func (s *Service) List(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error) {
 	if userID == "" {
 		return nil, errors.New(MsgEmptyUserID)
 	}
@@ -264,7 +246,7 @@ func (s *Service) Sync(ctx context.Context,
 
 // getSealedHelper — вспомогательная функция для загрузки объекта из ObjectRepo.
 // Считывает все данные в память и возвращает их как []byte.
-func (s *Service) getSealedHelper(ctx context.Context, loc ObjectLocator) (sealed []byte, err error) {
+func (s *Service) getSealedHelper(ctx context.Context, loc model.ObjectLocator) (sealed []byte, err error) {
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
 

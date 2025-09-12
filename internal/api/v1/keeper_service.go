@@ -70,7 +70,7 @@ type KeeperUseCase interface {
 	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error
 
 	// List возвращает список метаданных для секретов пользователя.
-	List(ctx context.Context, userID model.UserID) ([]keeper.MetaLoc, error)
+	List(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)
 
 	// Sync синхронизирует данные пользователя (метаданные и/или payload) через callback.
 	Sync(ctx context.Context, userID model.UserID, mode keeper.SyncMode, callback keeper.StreamCallback) error

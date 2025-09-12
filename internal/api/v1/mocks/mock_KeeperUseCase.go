@@ -250,23 +250,23 @@ func (_c *MockKeeperUseCase_GetSealed_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // List provides a mock function for the type MockKeeperUseCase
-func (_mock *MockKeeperUseCase) List(ctx context.Context, userID model.UserID) ([]keeper.MetaLoc, error) {
+func (_mock *MockKeeperUseCase) List(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error) {
 	ret := _mock.Called(ctx, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
-	var r0 []keeper.MetaLoc
+	var r0 []model.MetaLoc
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID) ([]keeper.MetaLoc, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID) ([]model.MetaLoc, error)); ok {
 		return returnFunc(ctx, userID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID) []keeper.MetaLoc); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID) []model.MetaLoc); ok {
 		r0 = returnFunc(ctx, userID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]keeper.MetaLoc)
+			r0 = ret.Get(0).([]model.MetaLoc)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, model.UserID) error); ok {
@@ -307,12 +307,12 @@ func (_c *MockKeeperUseCase_List_Call) Run(run func(ctx context.Context, userID 
 	return _c
 }
 
-func (_c *MockKeeperUseCase_List_Call) Return(metaLocs []keeper.MetaLoc, err error) *MockKeeperUseCase_List_Call {
+func (_c *MockKeeperUseCase_List_Call) Return(metaLocs []model.MetaLoc, err error) *MockKeeperUseCase_List_Call {
 	_c.Call.Return(metaLocs, err)
 	return _c
 }
 
-func (_c *MockKeeperUseCase_List_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID) ([]keeper.MetaLoc, error)) *MockKeeperUseCase_List_Call {
+func (_c *MockKeeperUseCase_List_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)) *MockKeeperUseCase_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

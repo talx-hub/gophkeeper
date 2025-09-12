@@ -7,14 +7,14 @@ pkgname: mocks
 packages:
   github.com/talx-hub/gophkeeper/internal/api/v1:
     interfaces:
-        UserRepository:
-        SessionService:
-        KeeperUseCase:
-#  github.com/talx-hub/gophkeeper/internal/service/keeper:
-#    interfaces:
-#     ObjectRepo:
-#     MetadataRepo:
+      UserRepository:
+      SessionService:
+      KeeperUseCase:
+  github.com/talx-hub/gophkeeper/internal/service/keeper:
+    interfaces:
+      ObjectRepo:
+      MetadataRepo:
   github.com/talx-hub/gophkeeper/pkg/session:
     interfaces:
-        RefreshTokenStorage:
+      RefreshTokenStorage:
 
