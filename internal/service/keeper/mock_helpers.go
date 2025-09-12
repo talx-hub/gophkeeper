@@ -46,7 +46,7 @@ func (b *objectRepoMockBuilder) WithPut() *objectRepoMockBuilder {
 			case "put-error-user":
 				return "", model.ObjectInfo{}, errors.New("error1")
 			case "create-and-delete-error-user":
-				return "error/locator", model.ObjectInfo{}, nil
+				return "locator://break/object/repo", model.ObjectInfo{}, nil
 			default:
 				return "dummy/locator", model.ObjectInfo{}, nil
 			}
@@ -62,7 +62,7 @@ func (b *objectRepoMockBuilder) WithDelete() *objectRepoMockBuilder {
 			loc model.ObjectLocator,
 		) error {
 			switch loc {
-			case "error/locator":
+			case "locator://break/object/repo":
 				return errors.New("error2")
 			default:
 				return nil
@@ -124,6 +124,25 @@ func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 				return 0, errors.New("error3")
 			default:
 				return dummyDataID, nil
+			}
+		})
+	return b
+}
+
+func (b *metadataRepoMockBuilder) WithDelete() *metadataRepoMockBuilder {
+	b.metadataRepo.EXPECT().
+		Delete(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(ctx context.Context,
+			userID model.UserID,
+			id model.DataID,
+		) (model.ObjectLocator, error) {
+			switch userID {
+			case "break-metadataRepo":
+				return "", errors.New("error")
+			case "break-objectRepo":
+				return "locator://break/object/repo", nil
+			default:
+				return "locator://dummy", nil
 			}
 		})
 	return b

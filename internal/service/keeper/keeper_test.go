@@ -301,3 +301,71 @@ func TestService_List(t *testing.T) {
 		})
 	}
 }
+
+func TestService_Delete(t *testing.T) {
+	tests := []struct {
+		name             string
+		objectRepoMock   *mocks.MockObjectRepo
+		metadataRepoMock *mocks.MockMetadataRepo
+		userID           model.UserID
+		dataID           model.DataID
+		wantError        bool
+	}{
+		{
+			name:             "userID empty",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "",
+			dataID:           dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "dataID empty",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "ok-user",
+			dataID:           0,
+			wantError:        true,
+		},
+		{
+			name:             "metadataRepo.Delete() fail",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
+			userID:           "break-metadataRepo",
+			dataID:           dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "objectRepo.Delete() fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithDelete().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
+			userID:           "break-objectRepo",
+			dataID:           dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "ok",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithDelete().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
+			userID:           "ok-user",
+			dataID:           dummyDataID,
+			wantError:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewService(tt.objectRepoMock, tt.metadataRepoMock)
+			err := service.Delete(context.Background(), tt.userID, tt.dataID)
+			if tt.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestService_Sync(t *testing.T) {
+
+}
