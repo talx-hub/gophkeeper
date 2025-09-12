@@ -168,3 +168,92 @@ func TestService_AddSealed(t *testing.T) {
 		})
 	}
 }
+
+func TestService_GetSealed(t *testing.T) {
+	tests := []struct {
+		objectRepoMock   *mocks.MockObjectRepo
+		metadataRepoMock *mocks.MockMetadataRepo
+		name             string
+		userID           model.UserID
+		id               model.DataID
+		cbFake           StreamCallback
+		wantError        bool
+	}{
+		{
+			name:             "userID is empty",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "",
+			wantError:        true,
+		},
+		{
+			name:             "dataID is empty",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			id:               0,
+			wantError:        true,
+		},
+		{
+			name:             "metadataRepo.Get() fail",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "metadata-repo-error-user",
+			id:               dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "objectRepo.Get() fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "brake-object-repo-get",
+			id:               dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "io.ReadAll() from objectRepo fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "brake-read",
+			id:               dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "readCloser.Close() from objectRepo fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "brake-close",
+			id:               dummyDataID,
+			wantError:        true,
+		},
+		{
+			name:             "callback fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "user-ok",
+			id:               dummyDataID,
+			cbFake:           fakeErrorCallback,
+			wantError:        true,
+		},
+		{
+			name:             "ok",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
+			userID:           "user-ok",
+			id:               dummyDataID,
+			cbFake:           fakeOKCallback,
+			wantError:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewService(tt.objectRepoMock, tt.metadataRepoMock)
+			err := service.GetSealed(context.Background(), tt.userID, tt.id, tt.cbFake)
+			if tt.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

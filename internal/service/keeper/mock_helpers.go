@@ -45,6 +45,8 @@ func (b *objectRepoMockBuilder) WithPut() *objectRepoMockBuilder {
 			switch meta.UserID {
 			case "put-error-user":
 				return "", model.ObjectInfo{}, errors.New("error1")
+			case "create-and-delete-error-user":
+				return "error/locator", model.ObjectInfo{}, nil
 			default:
 				return "dummy/locator", model.ObjectInfo{}, nil
 			}
@@ -64,6 +66,27 @@ func (b *objectRepoMockBuilder) WithDelete() *objectRepoMockBuilder {
 				return errors.New("error2")
 			default:
 				return nil
+			}
+		})
+	return b
+}
+
+func (b *objectRepoMockBuilder) WithGet() *objectRepoMockBuilder {
+	b.objectRepo.EXPECT().
+		Get(mock.Anything, mock.Anything).
+		RunAndReturn(func(
+			ctx context.Context,
+			loc model.ObjectLocator,
+		) (io.ReadCloser, model.ObjectInfo, error) {
+			switch loc {
+			case "brake://read/closer/read":
+				return &fakeReadErrorReadCloser{}, model.ObjectInfo{}, nil
+			case "brake://read/closer/close":
+				return &fakeCloseErrorReadCloser{}, model.ObjectInfo{}, nil
+			case "locator://error":
+				return nil, model.ObjectInfo{}, errors.New("error")
+			default:
+				return &fakeOKReadCloser{}, model.ObjectInfo{}, nil
 			}
 		})
 	return b
@@ -104,4 +127,72 @@ func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 			}
 		})
 	return b
+}
+
+func (b *metadataRepoMockBuilder) WithGet() *metadataRepoMockBuilder {
+	b.metadataRepo.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(ctx context.Context,
+			userID model.UserID,
+			id model.DataID,
+		) (model.Metadata, model.ObjectLocator, error) {
+			switch userID {
+			case "metadata-repo-error-user":
+				return model.Metadata{}, "", errors.New("error")
+			case "brake-object-repo-get":
+				return model.Metadata{UserID: userID, ID: id},
+					"locator://error", nil
+			case "brake-read":
+				return model.Metadata{UserID: userID, ID: id},
+					"brake://read/closer/read", nil
+			case "brake-close":
+				return model.Metadata{UserID: userID, ID: id},
+					"brake://read/closer/close", nil
+			default:
+				return model.Metadata{UserID: userID, ID: id},
+					"locator://ok", nil
+			}
+		})
+	return b
+}
+
+type fakeOKReadCloser struct {
+}
+
+func (rc *fakeOKReadCloser) Read(_ []byte) (int, error) {
+	return 0, io.EOF
+}
+
+func (rc *fakeOKReadCloser) Close() error {
+	return nil
+}
+
+type fakeReadErrorReadCloser struct {
+}
+
+func (rc *fakeReadErrorReadCloser) Read(_ []byte) (int, error) {
+	return 0, errors.New("dummy read error")
+}
+
+func (rc *fakeReadErrorReadCloser) Close() error {
+	return nil
+}
+
+type fakeCloseErrorReadCloser struct {
+}
+
+func (rc *fakeCloseErrorReadCloser) Read(_ []byte) (int, error) {
+	return 0, io.EOF
+}
+
+func (rc *fakeCloseErrorReadCloser) Close() error {
+	return errors.New("dummy close error")
+}
+
+var fakeOKCallback StreamCallback = func(_ *model.Metadata, _ []byte) error {
+	return nil
+}
+
+var fakeErrorCallback StreamCallback = func(_ *model.Metadata, _ []byte) error {
+	return errors.New("callback error")
 }
