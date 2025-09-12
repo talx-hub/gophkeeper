@@ -13,6 +13,7 @@ import (
 )
 
 const dummyDataID = 42
+const dummyError = "error"
 
 type objectRepoMockBuilder struct {
 	objectRepo *mocks.MockObjectRepo
@@ -84,7 +85,7 @@ func (b *objectRepoMockBuilder) WithGet() *objectRepoMockBuilder {
 			case "brake://read/closer/close":
 				return &fakeCloseErrorReadCloser{}, model.ObjectInfo{}, nil
 			case "locator://error":
-				return nil, model.ObjectInfo{}, errors.New("error")
+				return nil, model.ObjectInfo{}, errors.New(dummyError)
 			default:
 				return &fakeOKReadCloser{}, model.ObjectInfo{}, nil
 			}
@@ -138,7 +139,7 @@ func (b *metadataRepoMockBuilder) WithDelete() *metadataRepoMockBuilder {
 		) (model.ObjectLocator, error) {
 			switch userID {
 			case "break-metadataRepo":
-				return "", errors.New("error")
+				return "", errors.New(dummyError)
 			case "break-objectRepo":
 				return "locator://break/object/repo", nil
 			default:
@@ -157,7 +158,7 @@ func (b *metadataRepoMockBuilder) WithGet() *metadataRepoMockBuilder {
 		) (model.Metadata, model.ObjectLocator, error) {
 			switch userID {
 			case "metadata-repo-error-user":
-				return model.Metadata{}, "", errors.New("error")
+				return model.Metadata{}, "", errors.New(dummyError)
 			case "brake-object-repo-get":
 				return model.Metadata{UserID: userID, ID: id},
 					"locator://error", nil
@@ -181,10 +182,14 @@ func (b *metadataRepoMockBuilder) WithListByUser() *metadataRepoMockBuilder {
 		RunAndReturn(func(ctx context.Context,
 			userID model.UserID,
 		) ([]model.MetaLoc, error) {
-			if userID == "ok-user" {
+			switch userID {
+			case "ok-user":
 				return []model.MetaLoc{{}, {}}, nil
+			case "brake-object-repo-get":
+				return []model.MetaLoc{{Locator: "locator://error"}}, nil
+			default:
+				return nil, errors.New(dummyError)
 			}
-			return nil, errors.New("error")
 		})
 	return b
 }

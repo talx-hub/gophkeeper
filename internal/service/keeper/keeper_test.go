@@ -367,5 +367,86 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_Sync(t *testing.T) {
+	tests := []struct {
+		name             string
+		objectRepoMock   *mocks.MockObjectRepo
+		metadataRepoMock *mocks.MockMetadataRepo
+		userID           model.UserID
+		mode             SyncMode
+		cbFake           StreamCallback
+		wantError        bool
+	}{
+		{
+			name:             "userID empty",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "",
+			wantError:        true,
+		},
+		{
+			name:             "metadataRepo.ListByUser() fail",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "brake-repo-user",
+			wantError:        true,
+		},
+		{
+			name:             "objectRepo.Get() fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "brake-object-repo-get",
+			mode:             SyncModeShort,
+			wantError:        true,
+		},
+		{
+			name:             "unknown sync mode",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "ok-user",
+			mode:             SyncMode(0),
+			cbFake:           fakeOKCallback,
+			wantError:        true,
+		},
+		{
+			name:             "callback fail",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "ok-user",
+			mode:             SyncModeShort,
+			cbFake:           fakeErrorCallback,
+			wantError:        true,
+		},
+		{
+			name:             "full sync mode",
+			objectRepoMock:   mocks.NewMockObjectRepo(t),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "ok-user",
+			mode:             SyncModeFull,
+			cbFake:           fakeOKCallback,
+			wantError:        true,
+		},
+		{
+			name:             "ok",
+			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "ok-user",
+			mode:             SyncModeShort,
+			cbFake:           fakeOKCallback,
+			wantError:        false,
+		},
+	}
 
+	for _, tt := range tests {
+		objectRepo := tt.objectRepoMock
+		metadataRepo := tt.metadataRepoMock
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewService(objectRepo, metadataRepo)
+			err := service.Sync(context.Background(), tt.userID, tt.mode, tt.cbFake)
+			if tt.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
