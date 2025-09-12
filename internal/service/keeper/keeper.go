@@ -168,12 +168,12 @@ func (s *Service) List(ctx context.Context, userID model.UserID) ([]model.MetaLo
 	}
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
-	metaLoc, err := s.metadataRepo.ListByUser(ctxTO, userID)
+	metaLocs, err := s.metadataRepo.ListByUser(ctxTO, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list metadata from repo: %w", err)
 	}
 
-	return metaLoc, nil
+	return metaLocs, nil
 }
 
 // Delete удаляет объект и его метаданные по идентификатору.

@@ -156,6 +156,20 @@ func (b *metadataRepoMockBuilder) WithGet() *metadataRepoMockBuilder {
 	return b
 }
 
+func (b *metadataRepoMockBuilder) WithListByUser() *metadataRepoMockBuilder {
+	b.metadataRepo.EXPECT().
+		ListByUser(mock.Anything, mock.Anything).
+		RunAndReturn(func(ctx context.Context,
+			userID model.UserID,
+		) ([]model.MetaLoc, error) {
+			if userID == "ok-user" {
+				return []model.MetaLoc{{}, {}}, nil
+			}
+			return nil, errors.New("error")
+		})
+	return b
+}
+
 type fakeOKReadCloser struct {
 }
 

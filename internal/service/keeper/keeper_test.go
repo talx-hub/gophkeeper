@@ -190,6 +190,7 @@ func TestService_GetSealed(t *testing.T) {
 			name:             "dataID is empty",
 			objectRepoMock:   mocks.NewMockObjectRepo(t),
 			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "user-ok",
 			id:               0,
 			wantError:        true,
 		},
@@ -254,6 +255,49 @@ func TestService_GetSealed(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestService_List(t *testing.T) {
+	tests := []struct {
+		metadataRepoMock *mocks.MockMetadataRepo
+		name             string
+		userID           model.UserID
+		wantError        bool
+	}{
+		{
+			name:             "empty userID",
+			metadataRepoMock: mocks.NewMockMetadataRepo(t),
+			userID:           "",
+			wantError:        true,
+		},
+		{
+			name:             "metadataRepo.ListByUser() fail",
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "brake-repo-user",
+			wantError:        true,
+		},
+		{
+			name:             "ok",
+			metadataRepoMock: newMetadataRepoMockBuilder(t).WithListByUser().Build(),
+			userID:           "ok-user",
+			wantError:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewService(nil, tt.metadataRepoMock)
+			list, err := service.List(context.Background(), tt.userID)
+			if tt.wantError {
+				require.Error(t, err)
+				assert.Empty(t, list)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotEmpty(t, list)
 		})
 	}
 }
