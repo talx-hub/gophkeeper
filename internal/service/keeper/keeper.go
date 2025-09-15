@@ -45,10 +45,10 @@ type ObjectRepo interface {
 	// записанных данных.
 	// Возвращает локатор объекта и фактические сведения о записи.
 	Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte,
-	) (model.ObjectLocator, model.ObjectInfo, error)
+	) (model.ObjectLocator, error)
 
 	// Get возвращает поток для чтения объекта и сведения о нём.
-	Get(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, model.ObjectInfo, error)
+	Get(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, error)
 
 	// Delete удаляет объект по указанному локатору.
 	Delete(ctx context.Context, loc model.ObjectLocator) error
@@ -58,7 +58,7 @@ type ObjectRepo interface {
 // Содержит операции создания, получения, выборки и удаления.
 type MetadataRepo interface {
 	// Create сохраняет метаданные и связывает их с локатором объекта и сведениями о нём.
-	Create(ctx context.Context, meta *model.Metadata, info model.ObjectInfo, loc model.ObjectLocator,
+	Create(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator,
 	) (model.DataID, error)
 
 	// Get возвращает метаданные и локатор объекта по userID и DataID.
@@ -110,14 +110,15 @@ func (s *Service) AddSealed(ctx context.Context,
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
 	sum := sha256.Sum256(sealed)
-	loc, info, err := s.objectRepo.Put(ctx1, meta, bytes.NewReader(sealed), uint64(len(sealed)), sum[:])
+	loc, err := s.objectRepo.Put(
+		ctx1, meta, bytes.NewReader(sealed), uint64(len(sealed)), sum[:])
 	if err != nil {
 		return 0, fmt.Errorf("failed to put sealed data to object repo: %w", err)
 	}
 
 	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel2()
-	id, err := s.metadataRepo.Create(ctx2, meta, info, loc)
+	id, err := s.metadataRepo.Create(ctx2, meta, loc)
 	if err != nil {
 		if errDelete := s.objectRepo.Delete(ctx2, loc); errDelete != nil {
 			err = errors.Join(err, errDelete)
@@ -246,11 +247,12 @@ func (s *Service) Sync(ctx context.Context,
 
 // getSealedHelper — вспомогательная функция для загрузки объекта из ObjectRepo.
 // Считывает все данные в память и возвращает их как []byte.
-func (s *Service) getSealedHelper(ctx context.Context, loc model.ObjectLocator) (sealed []byte, err error) {
+func (s *Service) getSealedHelper(ctx context.Context, loc model.ObjectLocator,
+) (sealed []byte, err error) {
 	ctxTO, cancel := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel()
 
-	rc, _, err := s.objectRepo.Get(ctxTO, loc)
+	rc, err := s.objectRepo.Get(ctxTO, loc)
 	if err != nil {
 		return nil, fmt.Errorf("objectRepo.Get method failed: %w", err)
 	}

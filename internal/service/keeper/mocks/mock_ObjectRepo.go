@@ -97,7 +97,7 @@ func (_c *MockObjectRepo_Delete_Call) RunAndReturn(run func(ctx context.Context,
 }
 
 // Get provides a mock function for the type MockObjectRepo
-func (_mock *MockObjectRepo) Get(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, model.ObjectInfo, error) {
+func (_mock *MockObjectRepo) Get(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, error) {
 	ret := _mock.Called(ctx, loc)
 
 	if len(ret) == 0 {
@@ -105,9 +105,8 @@ func (_mock *MockObjectRepo) Get(ctx context.Context, loc model.ObjectLocator) (
 	}
 
 	var r0 io.ReadCloser
-	var r1 model.ObjectInfo
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.ObjectLocator) (io.ReadCloser, model.ObjectInfo, error)); ok {
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.ObjectLocator) (io.ReadCloser, error)); ok {
 		return returnFunc(ctx, loc)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, model.ObjectLocator) io.ReadCloser); ok {
@@ -117,17 +116,12 @@ func (_mock *MockObjectRepo) Get(ctx context.Context, loc model.ObjectLocator) (
 			r0 = ret.Get(0).(io.ReadCloser)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.ObjectLocator) model.ObjectInfo); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.ObjectLocator) error); ok {
 		r1 = returnFunc(ctx, loc)
 	} else {
-		r1 = ret.Get(1).(model.ObjectInfo)
+		r1 = ret.Error(1)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, model.ObjectLocator) error); ok {
-		r2 = returnFunc(ctx, loc)
-	} else {
-		r2 = ret.Error(2)
-	}
-	return r0, r1, r2
+	return r0, r1
 }
 
 // MockObjectRepo_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
@@ -160,18 +154,18 @@ func (_c *MockObjectRepo_Get_Call) Run(run func(ctx context.Context, loc model.O
 	return _c
 }
 
-func (_c *MockObjectRepo_Get_Call) Return(readCloser io.ReadCloser, objectInfo model.ObjectInfo, err error) *MockObjectRepo_Get_Call {
-	_c.Call.Return(readCloser, objectInfo, err)
+func (_c *MockObjectRepo_Get_Call) Return(readCloser io.ReadCloser, err error) *MockObjectRepo_Get_Call {
+	_c.Call.Return(readCloser, err)
 	return _c
 }
 
-func (_c *MockObjectRepo_Get_Call) RunAndReturn(run func(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, model.ObjectInfo, error)) *MockObjectRepo_Get_Call {
+func (_c *MockObjectRepo_Get_Call) RunAndReturn(run func(ctx context.Context, loc model.ObjectLocator) (io.ReadCloser, error)) *MockObjectRepo_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Put provides a mock function for the type MockObjectRepo
-func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, model.ObjectInfo, error) {
+func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, error) {
 	ret := _mock.Called(ctx, meta, r, size, sha256)
 
 	if len(ret) == 0 {
@@ -179,9 +173,8 @@ func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io
 	}
 
 	var r0 model.ObjectLocator
-	var r1 model.ObjectInfo
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) (model.ObjectLocator, model.ObjectInfo, error)); ok {
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) (model.ObjectLocator, error)); ok {
 		return returnFunc(ctx, meta, r, size, sha256)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) model.ObjectLocator); ok {
@@ -189,17 +182,12 @@ func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io
 	} else {
 		r0 = ret.Get(0).(model.ObjectLocator)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) model.ObjectInfo); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) error); ok {
 		r1 = returnFunc(ctx, meta, r, size, sha256)
 	} else {
-		r1 = ret.Get(1).(model.ObjectInfo)
+		r1 = ret.Error(1)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) error); ok {
-		r2 = returnFunc(ctx, meta, r, size, sha256)
-	} else {
-		r2 = ret.Error(2)
-	}
-	return r0, r1, r2
+	return r0, r1
 }
 
 // MockObjectRepo_Put_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Put'
@@ -250,12 +238,12 @@ func (_c *MockObjectRepo_Put_Call) Run(run func(ctx context.Context, meta *model
 	return _c
 }
 
-func (_c *MockObjectRepo_Put_Call) Return(objectLocator model.ObjectLocator, objectInfo model.ObjectInfo, err error) *MockObjectRepo_Put_Call {
-	_c.Call.Return(objectLocator, objectInfo, err)
+func (_c *MockObjectRepo_Put_Call) Return(objectLocator model.ObjectLocator, err error) *MockObjectRepo_Put_Call {
+	_c.Call.Return(objectLocator, err)
 	return _c
 }
 
-func (_c *MockObjectRepo_Put_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, model.ObjectInfo, error)) *MockObjectRepo_Put_Call {
+func (_c *MockObjectRepo_Put_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, error)) *MockObjectRepo_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }

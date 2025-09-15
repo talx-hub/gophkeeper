@@ -42,14 +42,14 @@ func (b *objectRepoMockBuilder) WithPut() *objectRepoMockBuilder {
 			r io.Reader,
 			size uint64,
 			sha256 []byte,
-		) (model.ObjectLocator, model.ObjectInfo, error) {
+		) (model.ObjectLocator, error) {
 			switch meta.UserID {
 			case "put-error-user":
-				return "", model.ObjectInfo{}, errors.New("error1")
+				return "", errors.New("error1")
 			case "create-and-delete-error-user":
-				return "locator://break/object/repo", model.ObjectInfo{}, nil
+				return "locator://break/object/repo", nil
 			default:
-				return "dummy/locator", model.ObjectInfo{}, nil
+				return "dummy/locator", nil
 			}
 		})
 
@@ -78,16 +78,16 @@ func (b *objectRepoMockBuilder) WithGet() *objectRepoMockBuilder {
 		RunAndReturn(func(
 			ctx context.Context,
 			loc model.ObjectLocator,
-		) (io.ReadCloser, model.ObjectInfo, error) {
+		) (io.ReadCloser, error) {
 			switch loc {
 			case "brake://read/closer/read":
-				return &fakeReadErrorReadCloser{}, model.ObjectInfo{}, nil
+				return &fakeReadErrorReadCloser{}, nil
 			case "brake://read/closer/close":
-				return &fakeCloseErrorReadCloser{}, model.ObjectInfo{}, nil
+				return &fakeCloseErrorReadCloser{}, nil
 			case "locator://error":
-				return nil, model.ObjectInfo{}, errors.New(dummyError)
+				return nil, errors.New(dummyError)
 			default:
-				return &fakeOKReadCloser{}, model.ObjectInfo{}, nil
+				return &fakeOKReadCloser{}, nil
 			}
 		})
 	return b
@@ -113,11 +113,10 @@ func (b *metadataRepoMockBuilder) Build() *mocks.MockMetadataRepo {
 
 func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 	b.metadataRepo.EXPECT().
-		Create(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Create(mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(func(
 			ctx context.Context,
 			meta *model.Metadata,
-			info model.ObjectInfo,
 			loc model.ObjectLocator,
 		) (model.DataID, error) {
 			switch meta.UserID {

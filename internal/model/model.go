@@ -38,13 +38,6 @@ type ChunkMetadata struct {
 	Last         bool
 }
 
-// ObjectInfo описывает фактические характеристики объекта,
-// полученные после записи в сторадж.
-type ObjectInfo struct {
-	Size   uint64
-	SHA256 [32]byte
-}
-
 // ObjectLocator — непрозрачный идентификатор местоположения объекта
 // в объектном хранилище (например, "pg://...", "s3://...").
 type ObjectLocator string
