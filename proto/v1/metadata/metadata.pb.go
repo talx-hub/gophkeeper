@@ -77,15 +77,15 @@ func (Metadata_DataType) EnumDescriptor() ([]byte, []int) {
 // Метаданные, описывающие объект данных.
 // Здесь хранится основная информация для идентификации объекта.
 type Metadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DataType      *Metadata_DataType     `protobuf:"varint,1,opt,name=data_type,json=dataType,enum=gophkeeper.v1.metadata.Metadata_DataType" json:"data_type,omitempty"` // Один из типов хранимых данных
-	Id            *int64                 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`                                                                           // Уникальный идентификатор записи
-	Name          *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`                                                                        // Человекочитаемое имя
-	Description   *string                `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`                                                          // Заметка
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`                                             // Время создания
-	ChunkMetadata *ChunkMetadata         `protobuf:"bytes,6,opt,name=chunk_metadata,json=chunkMetadata" json:"chunk_metadata,omitempty"`                                 // Если data_type == DATA_TYPE_BINARY, это поле заполняется данными
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DataType        *Metadata_DataType     `protobuf:"varint,1,opt,name=data_type,json=dataType,enum=gophkeeper.v1.metadata.Metadata_DataType" json:"data_type,omitempty"` // Один из типов хранимых данных
+	Id              *int64                 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`                                                                           // Уникальный идентификатор записи
+	Name            *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`                                                                        // Человекочитаемое имя
+	Description     *string                `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`                                                          // Заметка
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`                                             // Время создания
+	ChunkDescriptor *ChunkDescriptor       `protobuf:"bytes,6,opt,name=chunk_descriptor,json=chunkDescriptor" json:"chunk_descriptor,omitempty"`                           // Если data_type == DATA_TYPE_BINARY, это поле заполняется данными
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -153,38 +153,36 @@ func (x *Metadata) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *Metadata) GetChunkMetadata() *ChunkMetadata {
+func (x *Metadata) GetChunkDescriptor() *ChunkDescriptor {
 	if x != nil {
-		return x.ChunkMetadata
+		return x.ChunkDescriptor
 	}
 	return nil
 }
 
-type ChunkMetadata struct {
+type ChunkDescriptor struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Offset        *uint64                `protobuf:"varint,1,opt,name=offset" json:"offset,omitempty"`                                // смещение байт в объекте (0-based)
-	ObjectSize    *uint64                `protobuf:"varint,2,opt,name=object_size,json=objectSize" json:"object_size,omitempty"`      // общий размер объекта в байтах
-	Last          *bool                  `protobuf:"varint,3,opt,name=last" json:"last,omitempty"`                                    // последний ли чанк
-	Crc32C        *uint32                `protobuf:"varint,4,opt,name=crc32c" json:"crc32c,omitempty"`                                // CRC для чанка
-	ObjectSha256  []byte                 `protobuf:"bytes,5,opt,name=object_sha256,json=objectSha256" json:"object_sha256,omitempty"` // 32 байта;  Хэш всего файла — одинаков в каждом чанке
+	Offset        *uint64                `protobuf:"varint,1,opt,name=offset" json:"offset,omitempty"` // смещение байт в объекте (0-based)
+	Last          *bool                  `protobuf:"varint,2,opt,name=last" json:"last,omitempty"`     // последний ли чанк
+	Crc32C        *uint32                `protobuf:"varint,3,opt,name=crc32c" json:"crc32c,omitempty"` // CRC для чанка
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChunkMetadata) Reset() {
-	*x = ChunkMetadata{}
+func (x *ChunkDescriptor) Reset() {
+	*x = ChunkDescriptor{}
 	mi := &file_proto_v1_metadata_metadata_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChunkMetadata) String() string {
+func (x *ChunkDescriptor) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChunkMetadata) ProtoMessage() {}
+func (*ChunkDescriptor) ProtoMessage() {}
 
-func (x *ChunkMetadata) ProtoReflect() protoreflect.Message {
+func (x *ChunkDescriptor) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_v1_metadata_metadata_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -196,71 +194,54 @@ func (x *ChunkMetadata) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChunkMetadata.ProtoReflect.Descriptor instead.
-func (*ChunkMetadata) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChunkDescriptor.ProtoReflect.Descriptor instead.
+func (*ChunkDescriptor) Descriptor() ([]byte, []int) {
 	return file_proto_v1_metadata_metadata_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ChunkMetadata) GetOffset() uint64 {
+func (x *ChunkDescriptor) GetOffset() uint64 {
 	if x != nil && x.Offset != nil {
 		return *x.Offset
 	}
 	return 0
 }
 
-func (x *ChunkMetadata) GetObjectSize() uint64 {
-	if x != nil && x.ObjectSize != nil {
-		return *x.ObjectSize
-	}
-	return 0
-}
-
-func (x *ChunkMetadata) GetLast() bool {
+func (x *ChunkDescriptor) GetLast() bool {
 	if x != nil && x.Last != nil {
 		return *x.Last
 	}
 	return false
 }
 
-func (x *ChunkMetadata) GetCrc32C() uint32 {
+func (x *ChunkDescriptor) GetCrc32C() uint32 {
 	if x != nil && x.Crc32C != nil {
 		return *x.Crc32C
 	}
 	return 0
 }
 
-func (x *ChunkMetadata) GetObjectSha256() []byte {
-	if x != nil {
-		return x.ObjectSha256
-	}
-	return nil
-}
-
 var File_proto_v1_metadata_metadata_proto protoreflect.FileDescriptor
 
 const file_proto_v1_metadata_metadata_proto_rawDesc = "" +
 	"\n" +
-	" proto/v1/metadata/metadata.proto\x12\x16gophkeeper.v1.metadata\x1a\x1fgoogle/protobuf/timestamp.proto\"\x86\x03\n" +
+	" proto/v1/metadata/metadata.proto\x12\x16gophkeeper.v1.metadata\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\x03\n" +
 	"\bMetadata\x12F\n" +
 	"\tdata_type\x18\x01 \x01(\x0e2).gophkeeper.v1.metadata.Metadata.DataTypeR\bdataType\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12L\n" +
-	"\x0echunk_metadata\x18\x06 \x01(\v2%.gophkeeper.v1.metadata.ChunkMetadataR\rchunkMetadata\"c\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12R\n" +
+	"\x10chunk_descriptor\x18\x06 \x01(\v2'.gophkeeper.v1.metadata.ChunkDescriptorR\x0fchunkDescriptor\"c\n" +
 	"\bDataType\x12\x19\n" +
 	"\x15DATA_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eDATA_TYPE_AUTH\x10\x01\x12\x12\n" +
 	"\x0eDATA_TYPE_CARD\x10\x02\x12\x14\n" +
-	"\x10DATA_TYPE_BINARY\x10\x03\"\x99\x01\n" +
-	"\rChunkMetadata\x12\x16\n" +
-	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x1f\n" +
-	"\vobject_size\x18\x02 \x01(\x04R\n" +
-	"objectSize\x12\x12\n" +
-	"\x04last\x18\x03 \x01(\bR\x04last\x12\x16\n" +
-	"\x06crc32c\x18\x04 \x01(\rR\x06crc32c\x12#\n" +
-	"\robject_sha256\x18\x05 \x01(\fR\fobjectSha256B=Z;github.com/talx-hub/gophkeeper/proto/v1/metadata;metadatapbb\beditionsp\xe8\a"
+	"\x10DATA_TYPE_BINARY\x10\x03\"U\n" +
+	"\x0fChunkDescriptor\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x12\n" +
+	"\x04last\x18\x02 \x01(\bR\x04last\x12\x16\n" +
+	"\x06crc32c\x18\x03 \x01(\rR\x06crc32cB=Z;github.com/talx-hub/gophkeeper/proto/v1/metadata;metadatapbb\beditionsp\xe8\a"
 
 var (
 	file_proto_v1_metadata_metadata_proto_rawDescOnce sync.Once
@@ -279,13 +260,13 @@ var file_proto_v1_metadata_metadata_proto_msgTypes = make([]protoimpl.MessageInf
 var file_proto_v1_metadata_metadata_proto_goTypes = []any{
 	(Metadata_DataType)(0),        // 0: gophkeeper.v1.metadata.Metadata.DataType
 	(*Metadata)(nil),              // 1: gophkeeper.v1.metadata.Metadata
-	(*ChunkMetadata)(nil),         // 2: gophkeeper.v1.metadata.ChunkMetadata
+	(*ChunkDescriptor)(nil),       // 2: gophkeeper.v1.metadata.ChunkDescriptor
 	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
 }
 var file_proto_v1_metadata_metadata_proto_depIdxs = []int32{
 	0, // 0: gophkeeper.v1.metadata.Metadata.data_type:type_name -> gophkeeper.v1.metadata.Metadata.DataType
 	3, // 1: gophkeeper.v1.metadata.Metadata.created_at:type_name -> google.protobuf.Timestamp
-	2, // 2: gophkeeper.v1.metadata.Metadata.chunk_metadata:type_name -> gophkeeper.v1.metadata.ChunkMetadata
+	2, // 2: gophkeeper.v1.metadata.Metadata.chunk_descriptor:type_name -> gophkeeper.v1.metadata.ChunkDescriptor
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

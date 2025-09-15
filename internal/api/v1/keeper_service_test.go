@@ -287,12 +287,12 @@ func TestKeeperGRPCService_Get(t *testing.T) {
 	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 	correctResponse := &keeperpb.GetResponse{
 		Metadata: &metadatapb.Metadata{
-			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-			Id:            ptr(dummyID),
-			Name:          ptr("dummy name"),
-			Description:   ptr("dummy description"),
-			CreatedAt:     timestamppb.New(dummyTime),
-			ChunkMetadata: nil,
+			DataType:        ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:              ptr(dummyID),
+			Name:            ptr("dummy name"),
+			Description:     ptr("dummy description"),
+			CreatedAt:       timestamppb.New(dummyTime),
+			ChunkDescriptor: nil,
 		},
 		Payload: &commonpb.Payload{
 			SealedData: []byte("dummy secret bytes"),
@@ -501,23 +501,23 @@ func TestKeeperGRPCService_Sync(t *testing.T) {
 	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 	correctResponse := &keeperpb.SyncResponse{
 		Metadata: &metadatapb.Metadata{
-			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-			Id:            ptr(dummyID),
-			Name:          ptr("dummy name"),
-			Description:   ptr("dummy description"),
-			CreatedAt:     timestamppb.New(dummyTime),
-			ChunkMetadata: nil,
+			DataType:        ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:              ptr(dummyID),
+			Name:            ptr("dummy name"),
+			Description:     ptr("dummy description"),
+			CreatedAt:       timestamppb.New(dummyTime),
+			ChunkDescriptor: nil,
 		},
 		Payload: &commonpb.Payload{SealedData: nil},
 	}
 	correctResponseWithPayload := &keeperpb.SyncResponse{
 		Metadata: &metadatapb.Metadata{
-			DataType:      ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-			Id:            ptr(dummyID),
-			Name:          ptr("dummy name"),
-			Description:   ptr("dummy description"),
-			CreatedAt:     timestamppb.New(dummyTime),
-			ChunkMetadata: nil,
+			DataType:        ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
+			Id:              ptr(dummyID),
+			Name:            ptr("dummy name"),
+			Description:     ptr("dummy description"),
+			CreatedAt:       timestamppb.New(dummyTime),
+			ChunkDescriptor: nil,
 		},
 		Payload: &commonpb.Payload{
 			SealedData: []byte("dummy secret bytes"),

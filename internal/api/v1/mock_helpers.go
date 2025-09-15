@@ -233,13 +233,13 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 
 				if err := callback(
 					&model.Metadata{
-						CreatedAt:     dummyTime,
-						ChunkMetadata: nil,
-						UserID:        userID,
-						Name:          "dummy name",
-						Description:   "dummy description",
-						ID:            dummyID,
-						DataType:      model.DataTypeUnspecified,
+						CreatedAt:       dummyTime,
+						ChunkDescriptor: nil,
+						UserID:          userID,
+						Name:            "dummy name",
+						Description:     "dummy description",
+						ID:              dummyID,
+						DataType:        model.DataTypeUnspecified,
 					},
 					[]byte("dummy secret bytes"),
 				); err != nil {
@@ -328,13 +328,13 @@ func (b *useCaseMockBuilder) WithSync() *useCaseMockBuilder {
 			}
 
 			metadata := &model.Metadata{
-				CreatedAt:     dummyTime,
-				ChunkMetadata: nil,
-				UserID:        userID,
-				Name:          "dummy name",
-				Description:   "dummy description",
-				ID:            dummyID,
-				DataType:      model.DataTypeUnspecified,
+				CreatedAt:       dummyTime,
+				ChunkDescriptor: nil,
+				UserID:          userID,
+				Name:            "dummy name",
+				Description:     "dummy description",
+				ID:              dummyID,
+				DataType:        model.DataTypeUnspecified,
 			}
 
 			var err error

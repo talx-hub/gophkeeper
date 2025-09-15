@@ -21,21 +21,19 @@ const (
 )
 
 type Metadata struct {
-	CreatedAt     time.Time
-	ChunkMetadata *ChunkMetadata
-	UserID        UserID
-	Name          string
-	Description   string
-	ID            DataID
-	DataType      DataType
+	CreatedAt       time.Time
+	ChunkDescriptor *ChunkDescriptor
+	Description     string
+	Name            string
+	UserID          UserID
+	DataType        DataType
+	ID              DataID
 }
 
-type ChunkMetadata struct {
-	ObjectSHA256 []byte
-	Offset       uint64
-	ObjectSize   uint64
-	CRC32C       uint32
-	Last         bool
+type ChunkDescriptor struct {
+	Offset uint64
+	CRC32C uint32
+	Last   bool
 }
 
 // ObjectLocator — непрозрачный идентификатор местоположения объекта

@@ -32,24 +32,22 @@ func FromProtoMetadata(m *metadatapb.Metadata) (*model.Metadata, error) {
 		created = ts.AsTime()
 	}
 
-	var chunkMeta *model.ChunkMetadata
-	if cm := m.GetChunkMetadata(); cm != nil {
-		chunkMeta = &model.ChunkMetadata{
-			Offset:       cm.GetOffset(),
-			ObjectSize:   cm.GetObjectSize(),
-			Last:         cm.GetLast(),
-			CRC32C:       cm.GetCrc32C(),
-			ObjectSHA256: cm.GetObjectSha256(),
+	var chunkDescriptor *model.ChunkDescriptor
+	if cm := m.GetChunkDescriptor(); cm != nil {
+		chunkDescriptor = &model.ChunkDescriptor{
+			Offset: cm.GetOffset(),
+			CRC32C: cm.GetCrc32C(),
+			Last:   cm.GetLast(),
 		}
 	}
 
 	return &model.Metadata{
-		ID:            model.DataID(m.GetId()),
-		DataType:      dt,
-		Name:          m.GetName(),
-		Description:   m.GetDescription(),
-		CreatedAt:     created,
-		ChunkMetadata: chunkMeta,
+		ID:              model.DataID(m.GetId()),
+		DataType:        dt,
+		Name:            m.GetName(),
+		Description:     m.GetDescription(),
+		CreatedAt:       created,
+		ChunkDescriptor: chunkDescriptor,
 	}, nil
 }
 
@@ -70,24 +68,22 @@ func ToProtoMetadata(m *model.Metadata) *metadatapb.Metadata {
 		pdt = metadatapb.Metadata_DATA_TYPE_UNSPECIFIED
 	}
 
-	var cm *metadatapb.ChunkMetadata
-	if x := m.ChunkMetadata; x != nil {
-		cm = &metadatapb.ChunkMetadata{
-			Offset:       &x.Offset,
-			ObjectSize:   &x.ObjectSize,
-			Last:         &x.Last,
-			Crc32C:       &x.CRC32C,
-			ObjectSha256: x.ObjectSHA256,
+	var cd *metadatapb.ChunkDescriptor
+	if x := m.ChunkDescriptor; x != nil {
+		cd = &metadatapb.ChunkDescriptor{
+			Offset: &x.Offset,
+			Last:   &x.Last,
+			Crc32C: &x.CRC32C,
 		}
 	}
 
 	return &metadatapb.Metadata{
-		DataType:      &pdt,
-		Id:            ptrInt64(int64(m.ID)),
-		Name:          &m.Name,
-		Description:   &m.Description,
-		CreatedAt:     timestamppb.New(m.CreatedAt),
-		ChunkMetadata: cm,
+		DataType:        &pdt,
+		Id:              ptrInt64(int64(m.ID)),
+		Name:            &m.Name,
+		Description:     &m.Description,
+		CreatedAt:       timestamppb.New(m.CreatedAt),
+		ChunkDescriptor: cd,
 	}
 }
 
