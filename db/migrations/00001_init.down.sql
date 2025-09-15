@@ -1,10 +1,12 @@
 BEGIN TRANSACTION;
-    DROP TABLE users;
-    DROP TABLE passwords;
-    DROP TABLE types;
-    DROP TABLE data;
-    DROP TABLE refresh_tokens;
+    DROP TABLE IF EXISTS users CASCADE;
+    DROP TABLE IF EXISTS refresh_tokens CASCADE ;
+    DROP TABLE IF EXISTS objects CASCADE;
+    DROP TABLE IF EXISTS secret_blobs CASCADE;
+    DROP TABLE IF EXISTS file_chunks CASCADE ;
+    DROP TABLE IF EXISTS data_types CASCADE ;
 
-    DROP INDEX idx_refresh_tokens_user;
-    DROP INDEX idx_data_user;
+    DROP INDEX IF EXISTS idx_refresh_tokens_user CASCADE;
+    DROP INDEX IF EXISTS idx_objects_user CASCADE;
+    DROP INDEX IF EXISTS idx_secret_blobs_object CASCADE;
 COMMIT;

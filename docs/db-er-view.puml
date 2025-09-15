@@ -1,62 +1,60 @@
 @startuml
-!define Table(name,desc) class name as "desc" << (T,#FFAAAA) >>
-!define PK(field) <u>field</u>
-!define FK(field) <i>field</i>
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
 
-skinparam class {
-  BackgroundColor<<T>> PaleGoldenRod
-  ArrowColor Black
-  BorderColor Black
-}
-skinparam linetype ortho
-
-Table(users, "users") {
-  PK(id) : UUID
-
-  hash : TEXT
+entity "users" as users {
+  * id : UUID <<PK>>
+  --
+  login_hash   : BYTEA <<UNIQUE>>
+  password_hash: BYTEA
 }
 
-
-Table(passwords, "passwords") {
-  PK(id) : UUID
-  FK(id_user) : UUID
-
-  hash : TEXT
+entity "refresh_tokens" as refresh_tokens {
+  * id       : INT <<PK>>
+  --
+  user_id    : UUID <<FK>>
+  token_hash : BYTEA
+  expires_at : timestamptz
+  created_at : timestamptz
 }
 
-
-Table(types, "types") {
-  PK(id) : INT
-
+entity "data_types" as data_types {
+  * id   : INT <<PK>>
+  --
   name : VARCHAR(30)
 }
 
-
-Table(data, "data") {
-  PK(id) : INT
-  FK(id_user) : UUID
-  FK(id_type) : INT
-
-  data: BYTEA
-  note : TEXT
-  s3_key: TEXT
+entity "objects" as objects {
+  * id        : UUID <<PK>>
+  --
+  user_id     : UUID <<FK>>
+  data_type   : INT  <<FK>>
+  name        : TEXT
+  description : TEXT
+  created_at  : timestamptz
 }
 
-
-Table(refresh_tokens, "refresh_tokens") {
-  PK(id) : UUID
-  FK(id_user) : UUID
-
-  expires_at : timestamptz
+' составной PK: (objects_id, index)
+entity "file_chunks" as file_chunks {
+  * objects_id : UUID <<PK, FK>>
+  * index      : INT  <<PK>>
+  --
+  length       : INT
+  storage_key  : TEXT
 }
 
+entity "secret_blobs" as secret_blobs {
+  * id         : INT <<PK>>
+  --
+  objects_id : UUID <<FK>>
+  sealed     : BYTEA
+}
 
-' Отношения
-users "1" <-- "0..*" passwords : id_user\n(ON DELETE CASCADE)
-users "1" <-- "0..*" data : id_user\n(ON DELETE RESTRICT)
-users "1" <-- "0..*" refresh_tokens : id_user\n(ON DELETE CASCADE)
-data "0..*" -->"1" types : id_type (ON DELETE RESTRICT)
-
-
+' -------- relationships --------
+users       ||--o{ refresh_tokens : "has many"
+users       ||--o{ objects        : "owns many"
+data_types  ||--o{ objects        : "type of"
+objects     ||--o{ file_chunks    : "has many"
+objects     ||--o{ secret_blobs   : "has many"
 
 @enduml
