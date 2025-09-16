@@ -11,7 +11,7 @@ import (
 
 	"github.com/talx-hub/gophkeeper/internal/api/v1/mocks"
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/internal/service/keeper"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
 )
 
 const msgExpectedError = "expected error"

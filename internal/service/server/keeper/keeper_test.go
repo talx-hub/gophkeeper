@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/internal/service/keeper/mocks"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper/mocks"
 )
 
 func TestService_AddSealed(t *testing.T) {

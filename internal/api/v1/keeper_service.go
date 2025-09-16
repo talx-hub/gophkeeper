@@ -19,7 +19,7 @@ import (
 
 	"github.com/talx-hub/gophkeeper/internal/adapters/grpc/metadata"
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/internal/service/keeper"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
 	commonpb "github.com/talx-hub/gophkeeper/proto/v1/common"
 	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
 	metadatapb "github.com/talx-hub/gophkeeper/proto/v1/metadata"

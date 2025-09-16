@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/internal/service/keeper/mocks"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper/mocks"
 )
 
 const dummyDataID = 42

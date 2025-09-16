@@ -9,7 +9,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 	"github.com/talx-hub/gophkeeper/internal/model"
-	"github.com/talx-hub/gophkeeper/internal/service/keeper"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
 )
 
 // NewMockKeeperUseCase creates a new instance of MockKeeperUseCase. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

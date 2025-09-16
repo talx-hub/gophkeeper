@@ -10,7 +10,7 @@ packages:
       UserRepository:
       SessionService:
       KeeperUseCase:
-  github.com/talx-hub/gophkeeper/internal/service/keeper:
+  github.com/talx-hub/gophkeeper/internal/service/server/keeper:
     interfaces:
       ObjectRepo:
       MetadataRepo:
