@@ -21,7 +21,7 @@ entity "refresh_tokens" as refresh_tokens {
 entity "data_types" as data_types {
   * id   : INT <<PK>>
   --
-  name : VARCHAR(30)
+  name : VARCHAR(36)
 }
 
 entity "objects" as objects {

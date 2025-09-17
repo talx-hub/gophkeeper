@@ -3,13 +3,12 @@ package model
 import "time"
 
 type UserID string
-type DataID int64
 
 type User struct {
-	Login        string
-	UUID         UserID
-	PasswordHash []byte
+	PasswordHash string
+	LoginHash    []byte
 }
+type DataID int64
 
 type DataType int
 

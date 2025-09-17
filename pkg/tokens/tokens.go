@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime/debug"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
+	"github.com/talx-hub/gophkeeper/pkg/hash"
 )
 
 const AccessTokenExpire = 15 * time.Minute
@@ -27,15 +26,16 @@ func NewGenerator(secret []byte) *Generator {
 }
 
 func (g *Generator) GenerateRefreshToken(_ context.Context,
-) (token string, expiresAt time.Time, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("uuid generation failed: %v\n%s", r, debug.Stack())
-		}
-	}()
+) ([]byte, time.Time, error) {
+	const tokenSize = 32
+	random, err := hash.GenerateRandom(tokenSize)
+	if err != nil {
+		return nil, time.Time{}, fmt.Errorf(
+			"failed to generate token: %w", err)
+	}
 
-	token = uuid.New().String() // may panic
-	return token,
+	tokenHash := hash.GenerateSHA256(random)
+	return tokenHash,
 		time.Now().UTC().AddDate(0, 0, RefreshTokenExpireDays),
 		nil
 }

@@ -6,12 +6,12 @@ import (
 	"errors"
 	"log/slog"
 
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
+	"github.com/talx-hub/gophkeeper/pkg/hash"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
 )
 
@@ -19,18 +19,18 @@ const MsgRequestValidationFailed = "request validation failed: check if both Log
 
 type SessionService interface {
 	CreateSession(ctx context.Context, userID model.UserID,
-	) (accessToken string, refreshToken string, err error)
+	) (accessToken string, refreshToken []byte, err error)
 
-	RefreshSession(ctx context.Context, userID model.UserID, refreshToken string,
-	) (newAccessToken string, newRefreshToken string, err error)
+	RefreshSession(ctx context.Context, userID model.UserID, refreshToken []byte,
+	) (newAccessToken string, newRefreshToken []byte, err error)
 
 	ValidateAccessToken(ctx context.Context, token string) (userID model.UserID, err error)
-	RevokeSession(ctx context.Context, refreshToken string) error
+	RevokeSession(ctx context.Context, refreshToken []byte) error
 }
 
 type UserRepository interface {
 	Create(ctx context.Context, u *model.User) (model.UserID, error)
-	FindByLogin(ctx context.Context, login string) (model.User, error)
+	FindByLogin(ctx context.Context, loginHash []byte) (model.UserID, model.User, error)
 	FindByID(ctx context.Context, uuid model.UserID) (model.User, error)
 	Delete(ctx context.Context, uuid model.UserID) error
 }
@@ -40,6 +40,7 @@ type AuthService struct {
 	log            *slog.Logger
 	repo           UserRepository
 	sessionService SessionService
+	secret         []byte
 }
 
 func NewAuthService(
@@ -61,40 +62,42 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 		return nil, status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 	}
 
-	userData := r.GetAuthData()
-	if userData == nil {
+	credentials := r.GetAuthData()
+	if credentials == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")
 		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
-	} else if userData.Login == nil || userData.Password == nil {
+	} else if credentials.Login == nil || credentials.Password == nil {
 		s.log.ErrorContext(ctx,
 			"request validation failed: invalid login or password")
 		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
 	}
 
+	loginHash := hash.GenerateHMAC(credentials.GetLogin(), s.secret)
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
-	user, err := s.repo.FindByLogin(ctx1, userData.GetLogin())
+	userID, userData, err := s.repo.FindByLogin(ctx1, loginHash)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to find user by login",
-			"login", userData.GetLogin(),
+			"login", credentials.GetLogin(),
 			model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Unauthenticated, "failed to find user")
 	}
-	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(userData.GetPassword())); err != nil {
+	if err := hash.CompareHashAndPassword(
+		userData.PasswordHash, credentials.GetPassword()); err != nil {
 		s.log.ErrorContext(ctx, "password format is wrong", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Unauthenticated, "password format is wrong")
 	}
 
-	access, refresh, err := s.sessionService.CreateSession(ctx, user.UUID)
+	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, "failed to create session")
 	}
 
 	resp := &authpb.LoginResponse{
-		Credentials: &authpb.Credentials{
+		Tokens: &authpb.Tokens{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
-			RefreshToken: &authpb.RefreshToken{RefreshToken: &refresh},
+			RefreshToken: &authpb.RefreshToken{RefreshToken: refresh},
 		},
 	}
 
@@ -128,11 +131,11 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		return nil, status.Errorf(codes.InvalidArgument, MsgAgentWrong)
 	}
 
-	userData := r.GetAuthData()
-	if userData == nil {
+	credentials := r.GetAuthData()
+	if credentials == nil {
 		s.log.ErrorContext(ctx, "request validation failed: the registration data is nil")
 		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
-	} else if userData.Login == nil || userData.Password == nil {
+	} else if credentials.Login == nil || credentials.Password == nil {
 		s.log.ErrorContext(ctx,
 			"request validation failed: invalid login or password")
 		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
@@ -141,24 +144,27 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	const msgRegistrationFailed = "registration failed, try again"
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
-	if _, err := s.repo.FindByLogin(ctx1, userData.GetLogin()); err == nil {
+	if _, _, err := s.repo.FindByLogin(ctx1, credentials.GetLogin()); err == nil {
 		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
 	} else if !errors.Is(err, model.ErrNotFound) {
 		s.log.ErrorContext(ctx, "failed to check login existence", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
-	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
-	defer cancel2()
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.GetPassword()), bcrypt.DefaultCost)
+	loginHash := hash.GenerateHMAC(credentials.GetLogin(), s.secret)
+	passwordHash, err := hash.GenerateFromPassword(credentials.GetPassword())
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to hash password", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
-	userID, err := s.repo.Create(ctx2, &model.User{
-		Login:        userData.GetLogin(),
-		PasswordHash: passwordHash,
-	})
+
+	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
+	defer cancel2()
+	userID, err := s.repo.Create(ctx2,
+		&model.User{
+			LoginHash:    loginHash,
+			PasswordHash: passwordHash,
+		})
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create user", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
@@ -169,12 +175,12 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Internal, msgRegistrationFailed)
 	}
+
 	resp := &authpb.RegisterResponse{
-		Credentials: &authpb.Credentials{
+		Tokens: &authpb.Tokens{
 			AccessToken:  &authpb.AccessToken{AccessToken: &access},
-			RefreshToken: &authpb.RefreshToken{RefreshToken: &refresh},
+			RefreshToken: &authpb.RefreshToken{RefreshToken: refresh},
 		},
 	}
-
 	return resp, nil
 }

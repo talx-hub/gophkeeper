@@ -228,29 +228,35 @@ func (_c *MockUserRepository_FindByID_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // FindByLogin provides a mock function for the type MockUserRepository
-func (_mock *MockUserRepository) FindByLogin(ctx context.Context, login string) (model.User, error) {
-	ret := _mock.Called(ctx, login)
+func (_mock *MockUserRepository) FindByLogin(ctx context.Context, loginHash []byte) (model.UserID, model.User, error) {
+	ret := _mock.Called(ctx, loginHash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindByLogin")
 	}
 
-	var r0 model.User
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (model.User, error)); ok {
-		return returnFunc(ctx, login)
+	var r0 model.UserID
+	var r1 model.User
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) (model.UserID, model.User, error)); ok {
+		return returnFunc(ctx, loginHash)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) model.User); ok {
-		r0 = returnFunc(ctx, login)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) model.UserID); ok {
+		r0 = returnFunc(ctx, loginHash)
 	} else {
-		r0 = ret.Get(0).(model.User)
+		r0 = ret.Get(0).(model.UserID)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, login)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []byte) model.User); ok {
+		r1 = returnFunc(ctx, loginHash)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(model.User)
 	}
-	return r0, r1
+	if returnFunc, ok := ret.Get(2).(func(context.Context, []byte) error); ok {
+		r2 = returnFunc(ctx, loginHash)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
 }
 
 // MockUserRepository_FindByLogin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByLogin'
@@ -260,20 +266,20 @@ type MockUserRepository_FindByLogin_Call struct {
 
 // FindByLogin is a helper method to define mock.On call
 //   - ctx context.Context
-//   - login string
-func (_e *MockUserRepository_Expecter) FindByLogin(ctx interface{}, login interface{}) *MockUserRepository_FindByLogin_Call {
-	return &MockUserRepository_FindByLogin_Call{Call: _e.mock.On("FindByLogin", ctx, login)}
+//   - loginHash []byte
+func (_e *MockUserRepository_Expecter) FindByLogin(ctx interface{}, loginHash interface{}) *MockUserRepository_FindByLogin_Call {
+	return &MockUserRepository_FindByLogin_Call{Call: _e.mock.On("FindByLogin", ctx, loginHash)}
 }
 
-func (_c *MockUserRepository_FindByLogin_Call) Run(run func(ctx context.Context, login string)) *MockUserRepository_FindByLogin_Call {
+func (_c *MockUserRepository_FindByLogin_Call) Run(run func(ctx context.Context, loginHash []byte)) *MockUserRepository_FindByLogin_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 []byte
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].([]byte)
 		}
 		run(
 			arg0,
@@ -283,12 +289,12 @@ func (_c *MockUserRepository_FindByLogin_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockUserRepository_FindByLogin_Call) Return(user model.User, err error) *MockUserRepository_FindByLogin_Call {
-	_c.Call.Return(user, err)
+func (_c *MockUserRepository_FindByLogin_Call) Return(userID model.UserID, user model.User, err error) *MockUserRepository_FindByLogin_Call {
+	_c.Call.Return(userID, user, err)
 	return _c
 }
 
-func (_c *MockUserRepository_FindByLogin_Call) RunAndReturn(run func(ctx context.Context, login string) (model.User, error)) *MockUserRepository_FindByLogin_Call {
+func (_c *MockUserRepository_FindByLogin_Call) RunAndReturn(run func(ctx context.Context, loginHash []byte) (model.UserID, model.User, error)) *MockUserRepository_FindByLogin_Call {
 	_c.Call.Return(run)
 	return _c
 }

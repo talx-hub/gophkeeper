@@ -43,7 +43,7 @@ message RegisterRequest {
 
 // Ответ с токенами аутентификации после регистрации.
 message RegisterResponse {
-  Credentials credentials = 1;
+  Tokens tokens = 1;
 }
 
 // Запрос на вход пользователя.
@@ -53,7 +53,7 @@ message LoginRequest {
 
 // Ответ с токенами аутентификации после входа.
 message LoginResponse {
-  Credentials credentials = 1;
+  Tokens tokens = 1;
 }
 
 // Запрос на выход (logout).
@@ -67,12 +67,12 @@ message LogoutRequest {
 
 // Данные аутентификации пользователя.
 message AuthData{
-  string login = 1;
-  string password = 2;
+  bytes login = 1;
+  bytes password = 2;
 }
 
 // Учетные данные, включающие access и refresh токены.
-message Credentials {
+message Tokens {
   AccessToken access_token = 1;
   RefreshToken refresh_token = 2;
 }
@@ -84,5 +84,5 @@ message AccessToken {
 
 // Refresh токен, используемый для обновления access токена.
 message RefreshToken {
-  string refresh_token = 1;
+  bytes refresh_token = 1;
 }

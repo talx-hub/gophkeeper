@@ -70,7 +70,7 @@ func (x *RegisterRequest) GetAuthData() *AuthData {
 // Ответ с токенами аутентификации после регистрации.
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Credentials   *Credentials           `protobuf:"bytes,1,opt,name=credentials" json:"credentials,omitempty"`
+	Tokens        *Tokens                `protobuf:"bytes,1,opt,name=tokens" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,9 +105,9 @@ func (*RegisterResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_auth_auth_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RegisterResponse) GetCredentials() *Credentials {
+func (x *RegisterResponse) GetTokens() *Tokens {
 	if x != nil {
-		return x.Credentials
+		return x.Tokens
 	}
 	return nil
 }
@@ -160,7 +160,7 @@ func (x *LoginRequest) GetAuthData() *AuthData {
 // Ответ с токенами аутентификации после входа.
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Credentials   *Credentials           `protobuf:"bytes,1,opt,name=credentials" json:"credentials,omitempty"`
+	Tokens        *Tokens                `protobuf:"bytes,1,opt,name=tokens" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,9 +195,9 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_proto_v1_auth_auth_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *LoginResponse) GetCredentials() *Credentials {
+func (x *LoginResponse) GetTokens() *Tokens {
 	if x != nil {
-		return x.Credentials
+		return x.Tokens
 	}
 	return nil
 }
@@ -250,8 +250,8 @@ func (x *LogoutRequest) GetRefreshToken() *RefreshToken {
 // Данные аутентификации пользователя.
 type AuthData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Login         *string                `protobuf:"bytes,1,opt,name=login" json:"login,omitempty"`
-	Password      *string                `protobuf:"bytes,2,opt,name=password" json:"password,omitempty"`
+	Login         []byte                 `protobuf:"bytes,1,opt,name=login" json:"login,omitempty"`
+	Password      []byte                 `protobuf:"bytes,2,opt,name=password" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -286,22 +286,22 @@ func (*AuthData) Descriptor() ([]byte, []int) {
 	return file_proto_v1_auth_auth_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *AuthData) GetLogin() string {
-	if x != nil && x.Login != nil {
-		return *x.Login
+func (x *AuthData) GetLogin() []byte {
+	if x != nil {
+		return x.Login
 	}
-	return ""
+	return nil
 }
 
-func (x *AuthData) GetPassword() string {
-	if x != nil && x.Password != nil {
-		return *x.Password
+func (x *AuthData) GetPassword() []byte {
+	if x != nil {
+		return x.Password
 	}
-	return ""
+	return nil
 }
 
 // Учетные данные, включающие access и refresh токены.
-type Credentials struct {
+type Tokens struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccessToken   *AccessToken           `protobuf:"bytes,1,opt,name=access_token,json=accessToken" json:"access_token,omitempty"`
 	RefreshToken  *RefreshToken          `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken" json:"refresh_token,omitempty"`
@@ -309,20 +309,20 @@ type Credentials struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Credentials) Reset() {
-	*x = Credentials{}
+func (x *Tokens) Reset() {
+	*x = Tokens{}
 	mi := &file_proto_v1_auth_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Credentials) String() string {
+func (x *Tokens) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Credentials) ProtoMessage() {}
+func (*Tokens) ProtoMessage() {}
 
-func (x *Credentials) ProtoReflect() protoreflect.Message {
+func (x *Tokens) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_v1_auth_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -334,19 +334,19 @@ func (x *Credentials) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Credentials.ProtoReflect.Descriptor instead.
-func (*Credentials) Descriptor() ([]byte, []int) {
+// Deprecated: Use Tokens.ProtoReflect.Descriptor instead.
+func (*Tokens) Descriptor() ([]byte, []int) {
 	return file_proto_v1_auth_auth_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *Credentials) GetAccessToken() *AccessToken {
+func (x *Tokens) GetAccessToken() *AccessToken {
 	if x != nil {
 		return x.AccessToken
 	}
 	return nil
 }
 
-func (x *Credentials) GetRefreshToken() *RefreshToken {
+func (x *Tokens) GetRefreshToken() *RefreshToken {
 	if x != nil {
 		return x.RefreshToken
 	}
@@ -401,7 +401,7 @@ func (x *AccessToken) GetAccessToken() string {
 // Refresh токен, используемый для обновления access токена.
 type RefreshToken struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RefreshToken  *string                `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken" json:"refresh_token,omitempty"`
+	RefreshToken  []byte                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -436,11 +436,11 @@ func (*RefreshToken) Descriptor() ([]byte, []int) {
 	return file_proto_v1_auth_auth_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RefreshToken) GetRefreshToken() string {
-	if x != nil && x.RefreshToken != nil {
-		return *x.RefreshToken
+func (x *RefreshToken) GetRefreshToken() []byte {
+	if x != nil {
+		return x.RefreshToken
 	}
-	return ""
+	return nil
 }
 
 var File_proto_v1_auth_auth_proto protoreflect.FileDescriptor
@@ -449,25 +449,25 @@ const file_proto_v1_auth_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x18proto/v1/auth/auth.proto\x12\x12gophkeeper.v1.auth\x1a\x1bgoogle/protobuf/empty.proto\"L\n" +
 	"\x0fRegisterRequest\x129\n" +
-	"\tauth_data\x18\x01 \x01(\v2\x1c.gophkeeper.v1.auth.AuthDataR\bauthData\"U\n" +
-	"\x10RegisterResponse\x12A\n" +
-	"\vcredentials\x18\x01 \x01(\v2\x1f.gophkeeper.v1.auth.CredentialsR\vcredentials\"I\n" +
+	"\tauth_data\x18\x01 \x01(\v2\x1c.gophkeeper.v1.auth.AuthDataR\bauthData\"F\n" +
+	"\x10RegisterResponse\x122\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x1a.gophkeeper.v1.auth.TokensR\x06tokens\"I\n" +
 	"\fLoginRequest\x129\n" +
-	"\tauth_data\x18\x01 \x01(\v2\x1c.gophkeeper.v1.auth.AuthDataR\bauthData\"R\n" +
-	"\rLoginResponse\x12A\n" +
-	"\vcredentials\x18\x01 \x01(\v2\x1f.gophkeeper.v1.auth.CredentialsR\vcredentials\"V\n" +
+	"\tauth_data\x18\x01 \x01(\v2\x1c.gophkeeper.v1.auth.AuthDataR\bauthData\"C\n" +
+	"\rLoginResponse\x122\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x1a.gophkeeper.v1.auth.TokensR\x06tokens\"V\n" +
 	"\rLogoutRequest\x12E\n" +
 	"\rrefresh_token\x18\x01 \x01(\v2 .gophkeeper.v1.auth.RefreshTokenR\frefreshToken\"<\n" +
 	"\bAuthData\x12\x14\n" +
-	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x98\x01\n" +
-	"\vCredentials\x12B\n" +
+	"\x05login\x18\x01 \x01(\fR\x05login\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\fR\bpassword\"\x93\x01\n" +
+	"\x06Tokens\x12B\n" +
 	"\faccess_token\x18\x01 \x01(\v2\x1f.gophkeeper.v1.auth.AccessTokenR\vaccessToken\x12E\n" +
 	"\rrefresh_token\x18\x02 \x01(\v2 .gophkeeper.v1.auth.RefreshTokenR\frefreshToken\"0\n" +
 	"\vAccessToken\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"3\n" +
 	"\fRefreshToken\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken2\xf7\x01\n" +
+	"\rrefresh_token\x18\x01 \x01(\fR\frefreshToken2\xf7\x01\n" +
 	"\vAuthService\x12U\n" +
 	"\bRegister\x12#.gophkeeper.v1.auth.RegisterRequest\x1a$.gophkeeper.v1.auth.RegisterResponse\x12L\n" +
 	"\x05Login\x12 .gophkeeper.v1.auth.LoginRequest\x1a!.gophkeeper.v1.auth.LoginResponse\x12C\n" +
@@ -493,19 +493,19 @@ var file_proto_v1_auth_auth_proto_goTypes = []any{
 	(*LoginResponse)(nil),    // 3: gophkeeper.v1.auth.LoginResponse
 	(*LogoutRequest)(nil),    // 4: gophkeeper.v1.auth.LogoutRequest
 	(*AuthData)(nil),         // 5: gophkeeper.v1.auth.AuthData
-	(*Credentials)(nil),      // 6: gophkeeper.v1.auth.Credentials
+	(*Tokens)(nil),           // 6: gophkeeper.v1.auth.Tokens
 	(*AccessToken)(nil),      // 7: gophkeeper.v1.auth.AccessToken
 	(*RefreshToken)(nil),     // 8: gophkeeper.v1.auth.RefreshToken
 	(*emptypb.Empty)(nil),    // 9: google.protobuf.Empty
 }
 var file_proto_v1_auth_auth_proto_depIdxs = []int32{
 	5,  // 0: gophkeeper.v1.auth.RegisterRequest.auth_data:type_name -> gophkeeper.v1.auth.AuthData
-	6,  // 1: gophkeeper.v1.auth.RegisterResponse.credentials:type_name -> gophkeeper.v1.auth.Credentials
+	6,  // 1: gophkeeper.v1.auth.RegisterResponse.tokens:type_name -> gophkeeper.v1.auth.Tokens
 	5,  // 2: gophkeeper.v1.auth.LoginRequest.auth_data:type_name -> gophkeeper.v1.auth.AuthData
-	6,  // 3: gophkeeper.v1.auth.LoginResponse.credentials:type_name -> gophkeeper.v1.auth.Credentials
+	6,  // 3: gophkeeper.v1.auth.LoginResponse.tokens:type_name -> gophkeeper.v1.auth.Tokens
 	8,  // 4: gophkeeper.v1.auth.LogoutRequest.refresh_token:type_name -> gophkeeper.v1.auth.RefreshToken
-	7,  // 5: gophkeeper.v1.auth.Credentials.access_token:type_name -> gophkeeper.v1.auth.AccessToken
-	8,  // 6: gophkeeper.v1.auth.Credentials.refresh_token:type_name -> gophkeeper.v1.auth.RefreshToken
+	7,  // 5: gophkeeper.v1.auth.Tokens.access_token:type_name -> gophkeeper.v1.auth.AccessToken
+	8,  // 6: gophkeeper.v1.auth.Tokens.refresh_token:type_name -> gophkeeper.v1.auth.RefreshToken
 	0,  // 7: gophkeeper.v1.auth.AuthService.Register:input_type -> gophkeeper.v1.auth.RegisterRequest
 	2,  // 8: gophkeeper.v1.auth.AuthService.Login:input_type -> gophkeeper.v1.auth.LoginRequest
 	4,  // 9: gophkeeper.v1.auth.AuthService.Logout:input_type -> gophkeeper.v1.auth.LogoutRequest
