@@ -83,7 +83,7 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 		return nil, status.Errorf(codes.Unauthenticated, "failed to find user")
 	}
 	if err := hash.CompareHashAndPassword(
-		userData.PasswordHash, credentials.GetPassword()); err != nil {
+		userData.PasswordPHC, credentials.GetPassword()); err != nil {
 		s.log.ErrorContext(ctx, "password format is wrong", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Unauthenticated, "password format is wrong")
 	}
@@ -141,17 +141,17 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		return nil, status.Errorf(codes.InvalidArgument, MsgRequestValidationFailed)
 	}
 
+	loginHash := hash.GenerateHMAC(credentials.GetLogin(), s.secret)
 	const msgRegistrationFailed = "registration failed, try again"
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
-	if _, _, err := s.repo.FindByLogin(ctx1, credentials.GetLogin()); err == nil {
+	if _, _, err := s.repo.FindByLogin(ctx1, loginHash); err == nil {
 		return nil, status.Errorf(codes.AlreadyExists, "the username is already taken")
 	} else if !errors.Is(err, model.ErrNotFound) {
 		s.log.ErrorContext(ctx, "failed to check login existence", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
-	loginHash := hash.GenerateHMAC(credentials.GetLogin(), s.secret)
 	passwordHash, err := hash.GenerateFromPassword(credentials.GetPassword())
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to hash password", model.KeyLoggerError, err)
@@ -162,8 +162,8 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 	defer cancel2()
 	userID, err := s.repo.Create(ctx2,
 		&model.User{
-			LoginHash:    loginHash,
-			PasswordHash: passwordHash,
+			LoginHash:   loginHash,
+			PasswordPHC: passwordHash,
 		})
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create user", model.KeyLoggerError, err)

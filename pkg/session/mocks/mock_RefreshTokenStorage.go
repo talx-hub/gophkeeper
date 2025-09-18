@@ -40,8 +40,8 @@ func (_m *MockRefreshTokenStorage) EXPECT() *MockRefreshTokenStorage_Expecter {
 }
 
 // Delete provides a mock function for the type MockRefreshTokenStorage
-func (_mock *MockRefreshTokenStorage) Delete(ctx context.Context, token []byte) error {
-	ret := _mock.Called(ctx, token)
+func (_mock *MockRefreshTokenStorage) Delete(ctx context.Context, tokenHash []byte) error {
+	ret := _mock.Called(ctx, tokenHash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Delete")
@@ -49,7 +49,7 @@ func (_mock *MockRefreshTokenStorage) Delete(ctx context.Context, token []byte) 
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) error); ok {
-		r0 = returnFunc(ctx, token)
+		r0 = returnFunc(ctx, tokenHash)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -63,12 +63,12 @@ type MockRefreshTokenStorage_Delete_Call struct {
 
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - token []byte
-func (_e *MockRefreshTokenStorage_Expecter) Delete(ctx interface{}, token interface{}) *MockRefreshTokenStorage_Delete_Call {
-	return &MockRefreshTokenStorage_Delete_Call{Call: _e.mock.On("Delete", ctx, token)}
+//   - tokenHash []byte
+func (_e *MockRefreshTokenStorage_Expecter) Delete(ctx interface{}, tokenHash interface{}) *MockRefreshTokenStorage_Delete_Call {
+	return &MockRefreshTokenStorage_Delete_Call{Call: _e.mock.On("Delete", ctx, tokenHash)}
 }
 
-func (_c *MockRefreshTokenStorage_Delete_Call) Run(run func(ctx context.Context, token []byte)) *MockRefreshTokenStorage_Delete_Call {
+func (_c *MockRefreshTokenStorage_Delete_Call) Run(run func(ctx context.Context, tokenHash []byte)) *MockRefreshTokenStorage_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -91,14 +91,14 @@ func (_c *MockRefreshTokenStorage_Delete_Call) Return(err error) *MockRefreshTok
 	return _c
 }
 
-func (_c *MockRefreshTokenStorage_Delete_Call) RunAndReturn(run func(ctx context.Context, token []byte) error) *MockRefreshTokenStorage_Delete_Call {
+func (_c *MockRefreshTokenStorage_Delete_Call) RunAndReturn(run func(ctx context.Context, tokenHash []byte) error) *MockRefreshTokenStorage_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Save provides a mock function for the type MockRefreshTokenStorage
-func (_mock *MockRefreshTokenStorage) Save(ctx context.Context, token []byte, userID model.UserID, expiresAt time.Time) error {
-	ret := _mock.Called(ctx, token, userID, expiresAt)
+func (_mock *MockRefreshTokenStorage) Save(ctx context.Context, tokenHash []byte, userID model.UserID, expiresAt time.Time) error {
+	ret := _mock.Called(ctx, tokenHash, userID, expiresAt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Save")
@@ -106,7 +106,7 @@ func (_mock *MockRefreshTokenStorage) Save(ctx context.Context, token []byte, us
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, model.UserID, time.Time) error); ok {
-		r0 = returnFunc(ctx, token, userID, expiresAt)
+		r0 = returnFunc(ctx, tokenHash, userID, expiresAt)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -120,14 +120,14 @@ type MockRefreshTokenStorage_Save_Call struct {
 
 // Save is a helper method to define mock.On call
 //   - ctx context.Context
-//   - token []byte
+//   - tokenHash []byte
 //   - userID model.UserID
 //   - expiresAt time.Time
-func (_e *MockRefreshTokenStorage_Expecter) Save(ctx interface{}, token interface{}, userID interface{}, expiresAt interface{}) *MockRefreshTokenStorage_Save_Call {
-	return &MockRefreshTokenStorage_Save_Call{Call: _e.mock.On("Save", ctx, token, userID, expiresAt)}
+func (_e *MockRefreshTokenStorage_Expecter) Save(ctx interface{}, tokenHash interface{}, userID interface{}, expiresAt interface{}) *MockRefreshTokenStorage_Save_Call {
+	return &MockRefreshTokenStorage_Save_Call{Call: _e.mock.On("Save", ctx, tokenHash, userID, expiresAt)}
 }
 
-func (_c *MockRefreshTokenStorage_Save_Call) Run(run func(ctx context.Context, token []byte, userID model.UserID, expiresAt time.Time)) *MockRefreshTokenStorage_Save_Call {
+func (_c *MockRefreshTokenStorage_Save_Call) Run(run func(ctx context.Context, tokenHash []byte, userID model.UserID, expiresAt time.Time)) *MockRefreshTokenStorage_Save_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -160,22 +160,22 @@ func (_c *MockRefreshTokenStorage_Save_Call) Return(err error) *MockRefreshToken
 	return _c
 }
 
-func (_c *MockRefreshTokenStorage_Save_Call) RunAndReturn(run func(ctx context.Context, token []byte, userID model.UserID, expiresAt time.Time) error) *MockRefreshTokenStorage_Save_Call {
+func (_c *MockRefreshTokenStorage_Save_Call) RunAndReturn(run func(ctx context.Context, tokenHash []byte, userID model.UserID, expiresAt time.Time) error) *MockRefreshTokenStorage_Save_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Validate provides a mock function for the type MockRefreshTokenStorage
-func (_mock *MockRefreshTokenStorage) Validate(ctx context.Context, token []byte) error {
-	ret := _mock.Called(ctx, token)
+func (_mock *MockRefreshTokenStorage) Validate(ctx context.Context, tokenHash []byte, userID model.UserID) error {
+	ret := _mock.Called(ctx, tokenHash, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Validate")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) error); ok {
-		r0 = returnFunc(ctx, token)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte, model.UserID) error); ok {
+		r0 = returnFunc(ctx, tokenHash, userID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -189,12 +189,13 @@ type MockRefreshTokenStorage_Validate_Call struct {
 
 // Validate is a helper method to define mock.On call
 //   - ctx context.Context
-//   - token []byte
-func (_e *MockRefreshTokenStorage_Expecter) Validate(ctx interface{}, token interface{}) *MockRefreshTokenStorage_Validate_Call {
-	return &MockRefreshTokenStorage_Validate_Call{Call: _e.mock.On("Validate", ctx, token)}
+//   - tokenHash []byte
+//   - userID model.UserID
+func (_e *MockRefreshTokenStorage_Expecter) Validate(ctx interface{}, tokenHash interface{}, userID interface{}) *MockRefreshTokenStorage_Validate_Call {
+	return &MockRefreshTokenStorage_Validate_Call{Call: _e.mock.On("Validate", ctx, tokenHash, userID)}
 }
 
-func (_c *MockRefreshTokenStorage_Validate_Call) Run(run func(ctx context.Context, token []byte)) *MockRefreshTokenStorage_Validate_Call {
+func (_c *MockRefreshTokenStorage_Validate_Call) Run(run func(ctx context.Context, tokenHash []byte, userID model.UserID)) *MockRefreshTokenStorage_Validate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -204,9 +205,14 @@ func (_c *MockRefreshTokenStorage_Validate_Call) Run(run func(ctx context.Contex
 		if args[1] != nil {
 			arg1 = args[1].([]byte)
 		}
+		var arg2 model.UserID
+		if args[2] != nil {
+			arg2 = args[2].(model.UserID)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -217,7 +223,7 @@ func (_c *MockRefreshTokenStorage_Validate_Call) Return(err error) *MockRefreshT
 	return _c
 }
 
-func (_c *MockRefreshTokenStorage_Validate_Call) RunAndReturn(run func(ctx context.Context, token []byte) error) *MockRefreshTokenStorage_Validate_Call {
+func (_c *MockRefreshTokenStorage_Validate_Call) RunAndReturn(run func(ctx context.Context, tokenHash []byte, userID model.UserID) error) *MockRefreshTokenStorage_Validate_Call {
 	_c.Call.Return(run)
 	return _c
 }

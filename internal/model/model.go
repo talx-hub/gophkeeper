@@ -5,8 +5,8 @@ import "time"
 type UserID string
 
 type User struct {
-	PasswordHash string
-	LoginHash    []byte
+	PasswordPHC string
+	LoginHash   []byte
 }
 type DataID int64
 

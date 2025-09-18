@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"bytes"
 	"context"
-	"crypto/subtle"
 	"errors"
 	"fmt"
 	"testing"
@@ -15,101 +15,109 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
 )
 
-const msgExpectedError = "expected error"
-const keyDBFail = "db-fail"
-const keyDummyUserID = "dummy-user-id"
-const dummyID = 42
+type repoMockBuilder struct {
+	repo *mocks.MockUserRepository
+}
 
-//type repoMockBuilder struct {
-//	repo *mocks.MockUserRepository
-//}
-//
-//func newRepoMock(t *testing.T) *repoMockBuilder {
-//	t.Helper()
-//
-//	r := mocks.NewMockUserRepository(t)
-//	t.Cleanup(func() {
-//		r.AssertExpectations(t)
-//	})
-//	return &repoMockBuilder{repo: r}
-//}
-//
-//func (b *repoMockBuilder) Build() *mocks.MockUserRepository {
-//	return b.repo
-//}
-//
-//func (b *repoMockBuilder) WithFindByLogin() *repoMockBuilder {
-//	b.repo.EXPECT().
-//		FindByLogin(mock.Anything, mock.Anything).
-//		RunAndReturn(func(_ context.Context, login string) (model.User, error) {
-//			switch login {
-//			case keyDBFail:
-//				return model.User{}, errors.New("db error")
-//			case "new-user", "not-found", "create-fail", "session-fail-register":
-//				return model.User{}, model.ErrNotFound
-//			case "already-exists":
-//				return model.User{}, nil
-//			}
-//
-//			const hashForDummyPassword = "$2a$10$1rrMx6jcq7KoehP5mXc4HOBn2BgKi.6O1Blgc1uBTNHwBYvhTP2VC"
-//			return model.User{
-//				Login:        login,
-//				PasswordHash: []byte(hashForDummyPassword),
-//				UUID:         model.UserID(login),
-//			}, nil
-//		})
-//	return b
-//}
-//
-//func (b *repoMockBuilder) WithCreate() *repoMockBuilder {
-//	b.repo.EXPECT().
-//		Create(mock.Anything, mock.Anything).
-//		RunAndReturn(func(ctx context.Context, u *model.User) (model.UserID, error) {
-//			if u.Login == "create-fail" {
-//				return "", errors.New("user create failed")
-//			}
-//			return model.UserID(u.Login), nil
-//		})
-//
-//	return b
-//}
-//
-//func (b *repoMockBuilder) WithFindByID() *repoMockBuilder {
-//	b.repo.EXPECT().
-//		FindByID(mock.Anything, mock.Anything).
-//		RunAndReturn(func(_ context.Context, uuid model.UserID) (model.User, error) {
-//			if uuid == keyDBFail {
-//				return model.User{}, errors.New("db error")
-//			}
-//			if uuid == "not-found" {
-//				return model.User{}, model.ErrNotFound
-//			}
-//
-//			return model.User{
-//				Login:        "dummy-login",
-//				PasswordHash: []byte("dummy bytes"),
-//				UUID:         uuid,
-//			}, nil
-//		})
-//
-//	return b
-//}
-//
-//func (b *repoMockBuilder) WithDelete() *repoMockBuilder {
-//	b.repo.EXPECT().
-//		Delete(mock.Anything, mock.Anything).
-//		RunAndReturn(func(_ context.Context, uuid model.UserID) error {
-//			if uuid == keyDBFail {
-//				return errors.New("db error")
-//			}
-//			if uuid == "not-found" {
-//				return model.ErrNotFound
-//			}
-//			return nil
-//		})
-//
-//	return b
-//}
+func newRepoMock(t *testing.T) *repoMockBuilder {
+	t.Helper()
+
+	r := mocks.NewMockUserRepository(t)
+	t.Cleanup(func() {
+		r.AssertExpectations(t)
+	})
+	return &repoMockBuilder{repo: r}
+}
+
+func (b *repoMockBuilder) Build() *mocks.MockUserRepository {
+	return b.repo
+}
+
+func (b *repoMockBuilder) WithFindByLogin() *repoMockBuilder {
+	b.repo.EXPECT().
+		FindByLogin(mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, loginHash []byte) (model.UserID, model.User, error) {
+			switch string(loginHash) {
+			case string(fixtureLoginDBFail):
+				return "", model.User{}, errors.New("db error")
+			case string(fixtureLoginNewUser), string(fixtureLoginNotFound),
+				string(fixtureLoginCreateFailed):
+				return "", model.User{}, model.ErrNotFound
+			case string(fixtureLoginAlreadyExists):
+				return "", model.User{}, nil
+			case string(fixtureLoginSessionFail):
+				return keySessionFail, model.User{
+					LoginHash:   loginHash,
+					PasswordPHC: fixturePHC,
+				}, nil
+			case string(fixtureLoginSessionFailRegister):
+				return keySessionFail, model.User{
+					LoginHash:   loginHash,
+					PasswordPHC: fixturePHC,
+				}, model.ErrNotFound
+			}
+
+			return keyDummyUserID,
+				model.User{
+					LoginHash:   loginHash,
+					PasswordPHC: fixturePHC,
+				}, nil
+		})
+	return b
+}
+
+func (b *repoMockBuilder) WithCreate() *repoMockBuilder {
+	b.repo.EXPECT().
+		Create(mock.Anything, mock.Anything).
+		RunAndReturn(func(ctx context.Context, u *model.User) (model.UserID, error) {
+			if bytes.Equal(u.LoginHash, fixtureLoginCreateFailed) {
+				return "", errors.New("user create failed")
+			}
+			if bytes.Equal(u.LoginHash, fixtureLoginSessionFailRegister) {
+				return keySessionFail, nil
+			}
+
+			return model.UserID(u.LoginHash), nil
+		})
+
+	return b
+}
+
+func (b *repoMockBuilder) WithFindByID() *repoMockBuilder {
+	b.repo.EXPECT().
+		FindByID(mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, uuid model.UserID) (model.User, error) {
+			if uuid == keyDBFail {
+				return model.User{}, errors.New("db error")
+			}
+			if uuid == "not-found" {
+				return model.User{}, model.ErrNotFound
+			}
+
+			return model.User{
+				LoginHash:   []byte("dummy-login"),
+				PasswordPHC: fixturePHC,
+			}, nil
+		})
+
+	return b
+}
+
+func (b *repoMockBuilder) WithDelete() *repoMockBuilder {
+	b.repo.EXPECT().
+		Delete(mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, uuid model.UserID) error {
+			if uuid == keyDBFail {
+				return errors.New("db error")
+			}
+			if uuid == "not-found" {
+				return model.ErrNotFound
+			}
+			return nil
+		})
+
+	return b
+}
 
 type sessionMockBuilder struct {
 	service *mocks.MockSessionService
@@ -136,7 +144,7 @@ func (s *sessionMockBuilder) WithCreateSession() *sessionMockBuilder {
 			if userID == keyDummyUserID {
 				return "valid-jwt", []byte("valid-refresh"), nil
 			}
-			if userID == "session-fail" || userID == "session-fail-register" {
+			if userID == keySessionFail {
 				return "", nil, errors.New("create session error")
 			}
 			return "valid-jwt", []byte("valid-refresh"), nil
@@ -149,7 +157,7 @@ func (s *sessionMockBuilder) WithRevokeSession() *sessionMockBuilder {
 	s.service.EXPECT().
 		RevokeSession(mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, refreshToken []byte) error {
-			if subtle.ConstantTimeCompare(refreshToken, []byte("revoke-fail")) == 0 {
+			if bytes.Equal(refreshToken, []byte("revoke-fail")) {
 				return errors.New("revoke failed")
 			}
 			return nil

@@ -5,10 +5,50 @@ import (
 	"errors"
 	"io"
 
+	"golang.org/x/crypto/argon2"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/talx-hub/gophkeeper/pkg/hash"
 	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
 )
+
+const msgExpectedError = "expected error"
+const keyDBFail = "db-fail"
+const keyDummyUserID = "dummy-user-id"
+const dummyID = 42
+const dummySecret = "secret"
+const keySessionFail = "session-fail"
+
+var fixtureLoginDBFail = hash.GenerateHMAC(
+	[]byte(keyDBFail), []byte(dummySecret))
+var fixtureLoginNewUser = hash.GenerateHMAC(
+	[]byte("new-user"), []byte(dummySecret))
+var fixtureLoginNotFound = hash.GenerateHMAC(
+	[]byte("not-found"), []byte(dummySecret))
+var fixtureLoginCreateFailed = hash.GenerateHMAC(
+	[]byte("create-fail"), []byte(dummySecret))
+var fixtureLoginSessionFail = hash.GenerateHMAC(
+	[]byte(keySessionFail), []byte(dummySecret))
+var fixtureLoginSessionFailRegister = hash.GenerateHMAC(
+	[]byte("session-fail-register"), []byte(dummySecret))
+var fixtureLoginAlreadyExists = hash.GenerateHMAC(
+	[]byte("already-exists"), []byte(dummySecret))
+
+var fixturePasswordHash = argon2.IDKey(
+	[]byte("very-long-dummy-bytes"),
+	[]byte("salt"),
+	hash.TimeCost,
+	hash.MemoryCost,
+	hash.Threads,
+	hash.Len)
+
+var fixturePHC = hash.GeneratePHC(
+	fixturePasswordHash,
+	[]byte("salt"),
+	hash.AlgVersion,
+	hash.TimeCost,
+	hash.MemoryCost,
+	hash.Threads)
 
 func ptr[T any](val T) *T {
 	return &val

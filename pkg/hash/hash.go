@@ -8,9 +8,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
+
+const TimeCost = 2
+const MemoryCost = 64 * 1024
+const Threads = 1
+const Len = 32
+const SaltSize = 32
+const AlgVersion = argon2.Version
 
 func GenerateHMAC(data []byte, secret []byte) []byte {
 	hasher := hmac.New(sha256.New, secret)
@@ -28,51 +37,49 @@ func GenerateSHA256(data []byte) []byte {
 const passwordHashingCompetitionFormat = "$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s"
 
 func GenerateFromPassword(password []byte) (string, error) {
-	const saltSize = 32
-	salt, err := GenerateRandom(saltSize)
+	salt, err := GenerateRandom(SaltSize)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate salt: %w", err)
 	}
 
-	const timeCost = 2
-	const memoryCost = 64 * 1024
-	const threads = 1
-	const hashLen = 32
-	hash := argon2.IDKey(password, salt, timeCost, memoryCost, threads, hashLen)
+	hash := argon2.IDKey(password, salt, TimeCost, MemoryCost, Threads, Len)
 
-	phc := fmt.Sprintf(passwordHashingCompetitionFormat,
-		argon2.Version,
-		memoryCost,
-		timeCost,
-		threads,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(hash),
-	)
-	return phc, nil
+	return GeneratePHC(
+		hash,
+		salt,
+		AlgVersion,
+		MemoryCost,
+		TimeCost,
+		Threads,
+	), nil
 }
 
 func CompareHashAndPassword(phc string, password []byte) error {
 	var (
 		version                int
 		saltBase64, hashBase64 string
-		timeCost               uint32
-		memoryCost             uint32
-		threads                uint8
-		hashLen                uint32
+		tCost                  uint32
+		mCost                  uint32
+		threadCount            uint8
 	)
-	_, err := fmt.Sscanf(phc, passwordHashingCompetitionFormat,
-		&version,
-		&memoryCost,
-		&timeCost,
-		&threads,
-		&saltBase64,
-		&hashBase64)
+	parts := strings.Split(phc, "$")
+
+	versionStr := strings.TrimPrefix(parts[2], "v=")
+	version, err := strconv.Atoi(versionStr)
 	if err != nil {
-		return fmt.Errorf("failed to parse PHC: %w", err)
+		return fmt.Errorf("parse PHC argon2 version: %w", err)
 	}
-	if version != argon2.Version {
+	if version != AlgVersion {
 		return fmt.Errorf(
-			"argon2 version mismatch: have %d want %d", version, argon2.Version)
+			"argon2 version mismatch: have %d want %d", version, AlgVersion)
+	}
+
+	params := parts[3]
+	saltBase64 = parts[4]
+	hashBase64 = parts[5]
+	_, err = fmt.Sscanf(params, "m=%d,t=%d,p=%d", &mCost, &tCost, &threadCount)
+	if err != nil {
+		return fmt.Errorf("parse PHC parameters: %w", err)
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(saltBase64)
@@ -83,9 +90,8 @@ func CompareHashAndPassword(phc string, password []byte) error {
 	if err != nil {
 		return fmt.Errorf("hash base64.Decode: %w", err)
 	}
-	hashLen = uint32(len(hash))
 
-	computed := argon2.IDKey(password, salt, timeCost, memoryCost, threads, hashLen)
+	computed := argon2.IDKey(password, salt, tCost, mCost, threadCount, uint32(len(hash)))
 	if subtle.ConstantTimeCompare(computed, hash) == 0 {
 		return errors.New("password is incorrect")
 	}
@@ -98,4 +104,23 @@ func GenerateRandom(size int) ([]byte, error) {
 		return nil, fmt.Errorf("failed to generate random: %w", err)
 	}
 	return random, nil
+}
+
+func GeneratePHC(
+	passwordHash []byte,
+	salt []byte,
+	algVersion int,
+	timeCost uint32,
+	memoryCost uint32,
+	threads uint8,
+) string {
+	return fmt.Sprintf(
+		passwordHashingCompetitionFormat,
+		algVersion,
+		memoryCost,
+		timeCost,
+		threads,
+		base64.RawStdEncoding.EncodeToString(salt),
+		base64.RawStdEncoding.EncodeToString(passwordHash),
+	)
 }
