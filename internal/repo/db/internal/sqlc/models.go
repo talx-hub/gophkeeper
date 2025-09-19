@@ -8,25 +8,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ChunkManifest struct {
+	ObjectsID  pgtype.UUID
+	BlobID     pgtype.UUID
+	ChunkIndex int32
+	Length     int32
+}
+
 type DataType struct {
 	ID   int32
 	Name string
 }
 
-type FileChunk struct {
-	ObjectsID  pgtype.UUID
-	ChunkIndex int32
-	Length     int32
-	StorageKey string
-}
-
 type Object struct {
-	ID          pgtype.UUID
-	UserID      pgtype.UUID
-	DataType    int32
-	Name        string
-	Description pgtype.Text
-	CreatedAt   pgtype.Timestamptz
+	ID             pgtype.UUID
+	UserID         pgtype.UUID
+	IDDataType     int32
+	Name           string
+	Description    pgtype.Text
+	StorageLocator string
+	CreatedAt      pgtype.Timestamptz
 }
 
 type RefreshToken struct {

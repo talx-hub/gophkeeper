@@ -8,6 +8,7 @@ import (
 //go:embed migrations/*.sql
 var raw embed.FS
 
+//goland:noinspection GoUnusedGlobalVariable
 var Migrations fs.FS
 
 func init() {

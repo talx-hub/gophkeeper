@@ -77,16 +77,13 @@ func ToProtoMetadata(m *model.Metadata) *metadatapb.Metadata {
 		}
 	}
 
+	tempID := string(m.ID)
 	return &metadatapb.Metadata{
 		DataType:        &pdt,
-		Id:              ptrInt64(int64(m.ID)),
+		Id:              &tempID,
 		Name:            &m.Name,
 		Description:     &m.Description,
 		CreatedAt:       timestamppb.New(m.CreatedAt),
 		ChunkDescriptor: cd,
 	}
-}
-
-func ptrInt64(val int64) *int64 {
-	return &val
 }

@@ -38,81 +38,9 @@ func (_m *MockMetadataRepo) EXPECT() *MockMetadataRepo_Expecter {
 	return &MockMetadataRepo_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function for the type MockMetadataRepo
-func (_mock *MockMetadataRepo) Create(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator) (model.DataID, error) {
-	ret := _mock.Called(ctx, meta, loc)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 model.DataID
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, model.ObjectLocator) (model.DataID, error)); ok {
-		return returnFunc(ctx, meta, loc)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, model.ObjectLocator) model.DataID); ok {
-		r0 = returnFunc(ctx, meta, loc)
-	} else {
-		r0 = ret.Get(0).(model.DataID)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, model.ObjectLocator) error); ok {
-		r1 = returnFunc(ctx, meta, loc)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockMetadataRepo_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
-type MockMetadataRepo_Create_Call struct {
-	*mock.Call
-}
-
-// Create is a helper method to define mock.On call
-//   - ctx context.Context
-//   - meta *model.Metadata
-//   - loc model.ObjectLocator
-func (_e *MockMetadataRepo_Expecter) Create(ctx interface{}, meta interface{}, loc interface{}) *MockMetadataRepo_Create_Call {
-	return &MockMetadataRepo_Create_Call{Call: _e.mock.On("Create", ctx, meta, loc)}
-}
-
-func (_c *MockMetadataRepo_Create_Call) Run(run func(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator)) *MockMetadataRepo_Create_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 *model.Metadata
-		if args[1] != nil {
-			arg1 = args[1].(*model.Metadata)
-		}
-		var arg2 model.ObjectLocator
-		if args[2] != nil {
-			arg2 = args[2].(model.ObjectLocator)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *MockMetadataRepo_Create_Call) Return(dataID model.DataID, err error) *MockMetadataRepo_Create_Call {
-	_c.Call.Return(dataID, err)
-	return _c
-}
-
-func (_c *MockMetadataRepo_Create_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator) (model.DataID, error)) *MockMetadataRepo_Create_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Delete provides a mock function for the type MockMetadataRepo
-func (_mock *MockMetadataRepo) Delete(ctx context.Context, userID model.UserID, id model.DataID) (model.ObjectLocator, error) {
-	ret := _mock.Called(ctx, userID, id)
+func (_mock *MockMetadataRepo) Delete(ctx context.Context, id model.DataID) (model.ObjectLocator, error) {
+	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Delete")
@@ -120,16 +48,16 @@ func (_mock *MockMetadataRepo) Delete(ctx context.Context, userID model.UserID, 
 
 	var r0 model.ObjectLocator
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID) (model.ObjectLocator, error)); ok {
-		return returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID) (model.ObjectLocator, error)); ok {
+		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID) model.ObjectLocator); ok {
-		r0 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID) model.ObjectLocator); ok {
+		r0 = returnFunc(ctx, id)
 	} else {
 		r0 = ret.Get(0).(model.ObjectLocator)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.UserID, model.DataID) error); ok {
-		r1 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.DataID) error); ok {
+		r1 = returnFunc(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -143,30 +71,24 @@ type MockMetadataRepo_Delete_Call struct {
 
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID model.UserID
 //   - id model.DataID
-func (_e *MockMetadataRepo_Expecter) Delete(ctx interface{}, userID interface{}, id interface{}) *MockMetadataRepo_Delete_Call {
-	return &MockMetadataRepo_Delete_Call{Call: _e.mock.On("Delete", ctx, userID, id)}
+func (_e *MockMetadataRepo_Expecter) Delete(ctx interface{}, id interface{}) *MockMetadataRepo_Delete_Call {
+	return &MockMetadataRepo_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
 }
 
-func (_c *MockMetadataRepo_Delete_Call) Run(run func(ctx context.Context, userID model.UserID, id model.DataID)) *MockMetadataRepo_Delete_Call {
+func (_c *MockMetadataRepo_Delete_Call) Run(run func(ctx context.Context, id model.DataID)) *MockMetadataRepo_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.UserID
+		var arg1 model.DataID
 		if args[1] != nil {
-			arg1 = args[1].(model.UserID)
-		}
-		var arg2 model.DataID
-		if args[2] != nil {
-			arg2 = args[2].(model.DataID)
+			arg1 = args[1].(model.DataID)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -177,14 +99,14 @@ func (_c *MockMetadataRepo_Delete_Call) Return(objectLocator model.ObjectLocator
 	return _c
 }
 
-func (_c *MockMetadataRepo_Delete_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID, id model.DataID) (model.ObjectLocator, error)) *MockMetadataRepo_Delete_Call {
+func (_c *MockMetadataRepo_Delete_Call) RunAndReturn(run func(ctx context.Context, id model.DataID) (model.ObjectLocator, error)) *MockMetadataRepo_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function for the type MockMetadataRepo
-func (_mock *MockMetadataRepo) Get(ctx context.Context, userID model.UserID, id model.DataID) (model.Metadata, model.ObjectLocator, error) {
-	ret := _mock.Called(ctx, userID, id)
+func (_mock *MockMetadataRepo) Get(ctx context.Context, id model.DataID) (model.Metadata, model.ObjectLocator, error) {
+	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -193,21 +115,21 @@ func (_mock *MockMetadataRepo) Get(ctx context.Context, userID model.UserID, id 
 	var r0 model.Metadata
 	var r1 model.ObjectLocator
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID) (model.Metadata, model.ObjectLocator, error)); ok {
-		return returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID) (model.Metadata, model.ObjectLocator, error)); ok {
+		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID) model.Metadata); ok {
-		r0 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID) model.Metadata); ok {
+		r0 = returnFunc(ctx, id)
 	} else {
 		r0 = ret.Get(0).(model.Metadata)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.UserID, model.DataID) model.ObjectLocator); ok {
-		r1 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.DataID) model.ObjectLocator); ok {
+		r1 = returnFunc(ctx, id)
 	} else {
 		r1 = ret.Get(1).(model.ObjectLocator)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, model.UserID, model.DataID) error); ok {
-		r2 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, model.DataID) error); ok {
+		r2 = returnFunc(ctx, id)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -221,30 +143,24 @@ type MockMetadataRepo_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID model.UserID
 //   - id model.DataID
-func (_e *MockMetadataRepo_Expecter) Get(ctx interface{}, userID interface{}, id interface{}) *MockMetadataRepo_Get_Call {
-	return &MockMetadataRepo_Get_Call{Call: _e.mock.On("Get", ctx, userID, id)}
+func (_e *MockMetadataRepo_Expecter) Get(ctx interface{}, id interface{}) *MockMetadataRepo_Get_Call {
+	return &MockMetadataRepo_Get_Call{Call: _e.mock.On("Get", ctx, id)}
 }
 
-func (_c *MockMetadataRepo_Get_Call) Run(run func(ctx context.Context, userID model.UserID, id model.DataID)) *MockMetadataRepo_Get_Call {
+func (_c *MockMetadataRepo_Get_Call) Run(run func(ctx context.Context, id model.DataID)) *MockMetadataRepo_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.UserID
+		var arg1 model.DataID
 		if args[1] != nil {
-			arg1 = args[1].(model.UserID)
-		}
-		var arg2 model.DataID
-		if args[2] != nil {
-			arg2 = args[2].(model.DataID)
+			arg1 = args[1].(model.DataID)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -255,7 +171,7 @@ func (_c *MockMetadataRepo_Get_Call) Return(metadata model.Metadata, objectLocat
 	return _c
 }
 
-func (_c *MockMetadataRepo_Get_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID, id model.DataID) (model.Metadata, model.ObjectLocator, error)) *MockMetadataRepo_Get_Call {
+func (_c *MockMetadataRepo_Get_Call) RunAndReturn(run func(ctx context.Context, id model.DataID) (model.Metadata, model.ObjectLocator, error)) *MockMetadataRepo_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -324,6 +240,78 @@ func (_c *MockMetadataRepo_ListByUser_Call) Return(metaLocs []model.MetaLoc, err
 }
 
 func (_c *MockMetadataRepo_ListByUser_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)) *MockMetadataRepo_ListByUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Put provides a mock function for the type MockMetadataRepo
+func (_mock *MockMetadataRepo) Put(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator) (model.DataID, error) {
+	ret := _mock.Called(ctx, meta, loc)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Put")
+	}
+
+	var r0 model.DataID
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, model.ObjectLocator) (model.DataID, error)); ok {
+		return returnFunc(ctx, meta, loc)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, model.ObjectLocator) model.DataID); ok {
+		r0 = returnFunc(ctx, meta, loc)
+	} else {
+		r0 = ret.Get(0).(model.DataID)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, model.ObjectLocator) error); ok {
+		r1 = returnFunc(ctx, meta, loc)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockMetadataRepo_Put_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Put'
+type MockMetadataRepo_Put_Call struct {
+	*mock.Call
+}
+
+// Put is a helper method to define mock.On call
+//   - ctx context.Context
+//   - meta *model.Metadata
+//   - loc model.ObjectLocator
+func (_e *MockMetadataRepo_Expecter) Put(ctx interface{}, meta interface{}, loc interface{}) *MockMetadataRepo_Put_Call {
+	return &MockMetadataRepo_Put_Call{Call: _e.mock.On("Put", ctx, meta, loc)}
+}
+
+func (_c *MockMetadataRepo_Put_Call) Run(run func(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator)) *MockMetadataRepo_Put_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *model.Metadata
+		if args[1] != nil {
+			arg1 = args[1].(*model.Metadata)
+		}
+		var arg2 model.ObjectLocator
+		if args[2] != nil {
+			arg2 = args[2].(model.ObjectLocator)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockMetadataRepo_Put_Call) Return(dataID model.DataID, err error) *MockMetadataRepo_Put_Call {
+	_c.Call.Return(dataID, err)
+	return _c
+}
+
+func (_c *MockMetadataRepo_Put_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator) (model.DataID, error)) *MockMetadataRepo_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }

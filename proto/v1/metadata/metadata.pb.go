@@ -79,7 +79,7 @@ func (Metadata_DataType) EnumDescriptor() ([]byte, []int) {
 type Metadata struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	DataType        *Metadata_DataType     `protobuf:"varint,1,opt,name=data_type,json=dataType,enum=gophkeeper.v1.metadata.Metadata_DataType" json:"data_type,omitempty"` // Один из типов хранимых данных
-	Id              *int64                 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`                                                                           // Уникальный идентификатор записи
+	Id              *string                `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`                                                                            // Уникальный идентификатор записи
 	Name            *string                `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`                                                                        // Человекочитаемое имя
 	Description     *string                `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`                                                          // Заметка
 	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`                                             // Время создания
@@ -125,11 +125,11 @@ func (x *Metadata) GetDataType() Metadata_DataType {
 	return Metadata_DATA_TYPE_UNSPECIFIED
 }
 
-func (x *Metadata) GetId() int64 {
+func (x *Metadata) GetId() string {
 	if x != nil && x.Id != nil {
 		return *x.Id
 	}
-	return 0
+	return ""
 }
 
 func (x *Metadata) GetName() string {
@@ -227,7 +227,7 @@ const file_proto_v1_metadata_metadata_proto_rawDesc = "" +
 	" proto/v1/metadata/metadata.proto\x12\x16gophkeeper.v1.metadata\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\x03\n" +
 	"\bMetadata\x12F\n" +
 	"\tdata_type\x18\x01 \x01(\x0e2).gophkeeper.v1.metadata.Metadata.DataTypeR\bdataType\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\x03R\x02id\x12\x12\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x129\n" +
 	"\n" +

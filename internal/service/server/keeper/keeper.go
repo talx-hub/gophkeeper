@@ -29,6 +29,8 @@ type Service struct {
 
 // NewService возвращает новый экземпляр Service,
 // используя указанные реализации хранилищ объектов и метаданных.
+//
+//goland:noinspection GoUnusedExportedFunction
 func NewService(objectRepo ObjectRepo, metadataRepo MetadataRepo) *Service {
 	return &Service{
 		objectRepo:   objectRepo,
@@ -57,18 +59,18 @@ type ObjectRepo interface {
 // MetadataRepo абстрагирует работу с метаданными в реляционном хранилище.
 // Содержит операции создания, получения, выборки и удаления.
 type MetadataRepo interface {
-	// Create сохраняет метаданные и связывает их с локатором объекта и сведениями о нём.
-	Create(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator,
+	// Put сохраняет метаданные и связывает их с локатором объекта и сведениями о нём.
+	Put(ctx context.Context, meta *model.Metadata, loc model.ObjectLocator,
 	) (model.DataID, error)
 
-	// Get возвращает метаданные и локатор объекта по userID и DataID.
-	Get(ctx context.Context, userID model.UserID, id model.DataID) (model.Metadata, model.ObjectLocator, error)
+	// Get возвращает метаданные и локатор объекта по DataID.
+	Get(ctx context.Context, id model.DataID) (model.Metadata, model.ObjectLocator, error)
 
 	// ListByUser возвращает список всех метаданных пользователя вместе с локаторами объектов.
 	ListByUser(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)
 
-	// Delete удаляет метаданные по userID и DataID и возвращает локатор объекта.
-	Delete(ctx context.Context, userID model.UserID, id model.DataID) (model.ObjectLocator, error)
+	// Delete удаляет метаданные по DataID и возвращает локатор объекта.
+	Delete(ctx context.Context, id model.DataID) (model.ObjectLocator, error)
 }
 
 // StreamCallback вызывается сервисом при выдаче объекта наружу.
@@ -92,18 +94,18 @@ func (s *Service) AddSealed(ctx context.Context,
 	sealed []byte,
 ) (model.DataID, error) {
 	if userID == "" {
-		return 0, errors.New(MsgEmptyUserID)
+		return "", errors.New(MsgEmptyUserID)
 	}
 	if meta == nil {
-		return 0, errors.New("nil metadata")
+		return "", errors.New("nil metadata")
 	}
 	if len(sealed) == 0 {
-		return 0, errors.New("empty sealed_data")
+		return "", errors.New("empty sealed_data")
 	}
 	switch meta.DataType {
 	case model.DataTypeAuthenticationCredentials, model.DataTypeCard, model.DataTypeBinary:
 	default:
-		return 0, fmt.Errorf("unsupported data type: %v", meta.DataType)
+		return "", fmt.Errorf("unsupported data type: %v", meta.DataType)
 	}
 	meta.UserID = userID
 
@@ -113,17 +115,17 @@ func (s *Service) AddSealed(ctx context.Context,
 	loc, err := s.objectRepo.Put(
 		ctx1, meta, bytes.NewReader(sealed), uint64(len(sealed)), sum[:])
 	if err != nil {
-		return 0, fmt.Errorf("failed to put sealed data to object repo: %w", err)
+		return "", fmt.Errorf("failed to put sealed data to object repo: %w", err)
 	}
 
 	ctx2, cancel2 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel2()
-	id, err := s.metadataRepo.Create(ctx2, meta, loc)
+	id, err := s.metadataRepo.Put(ctx2, meta, loc)
 	if err != nil {
 		if errDelete := s.objectRepo.Delete(ctx2, loc); errDelete != nil {
 			err = errors.Join(err, errDelete)
 		}
-		return 0, fmt.Errorf("failed to put metadata to meta repo: %w", err)
+		return "", fmt.Errorf("failed to put metadata to meta repo: %w", err)
 	}
 
 	return id, nil
@@ -133,20 +135,16 @@ func (s *Service) AddSealed(ctx context.Context,
 // для передачи метаданных и зашифрованных данных вызывающему коду.
 // Используется при gRPC-стриминге или других потоковых интерфейсах.
 func (s *Service) GetSealed(ctx context.Context,
-	userID model.UserID,
 	id model.DataID,
 	cb StreamCallback,
 ) (err error) {
-	if userID == "" {
-		return errors.New(MsgEmptyUserID)
-	}
-	if id == 0 {
+	if id == "" {
 		return errors.New("empty id")
 	}
 
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
-	meta, loc, err := s.metadataRepo.Get(ctx1, userID, id)
+	meta, loc, err := s.metadataRepo.Get(ctx1, id)
 	if err != nil {
 		return fmt.Errorf("failed to get metadata from repo: %w", err)
 	}
@@ -178,17 +176,14 @@ func (s *Service) List(ctx context.Context, userID model.UserID) ([]model.MetaLo
 }
 
 // Delete удаляет объект и его метаданные по идентификатору.
-func (s *Service) Delete(ctx context.Context, userID model.UserID, id model.DataID) error {
-	if userID == "" {
-		return errors.New(MsgEmptyUserID)
-	}
-	if id == 0 {
+func (s *Service) Delete(ctx context.Context, id model.DataID) error {
+	if id == "" {
 		return errors.New("empty id")
 	}
 
 	ctx1, cancel1 := context.WithTimeout(ctx, model.RepoOperationTO)
 	defer cancel1()
-	loc, err := s.metadataRepo.Delete(ctx1, userID, id)
+	loc, err := s.metadataRepo.Delete(ctx1, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete metadata: %w", err)
 	}

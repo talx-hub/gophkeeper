@@ -12,7 +12,7 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/service/server/keeper/mocks"
 )
 
-const dummyDataID = 42
+const dummyDataID = "dummyDataID"
 const dummyError = "error"
 
 type objectRepoMockBuilder struct {
@@ -113,7 +113,7 @@ func (b *metadataRepoMockBuilder) Build() *mocks.MockMetadataRepo {
 
 func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 	b.metadataRepo.EXPECT().
-		Create(mock.Anything, mock.Anything, mock.Anything).
+		Put(mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(func(
 			ctx context.Context,
 			meta *model.Metadata,
@@ -121,7 +121,7 @@ func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 		) (model.DataID, error) {
 			switch meta.UserID {
 			case "create-error-user", "create-and-delete-error-user":
-				return 0, errors.New("error3")
+				return "", errors.New("error3")
 			default:
 				return dummyDataID, nil
 			}
@@ -131,12 +131,11 @@ func (b *metadataRepoMockBuilder) WithCreate() *metadataRepoMockBuilder {
 
 func (b *metadataRepoMockBuilder) WithDelete() *metadataRepoMockBuilder {
 	b.metadataRepo.EXPECT().
-		Delete(mock.Anything, mock.Anything, mock.Anything).
+		Delete(mock.Anything, mock.Anything).
 		RunAndReturn(func(ctx context.Context,
-			userID model.UserID,
 			id model.DataID,
 		) (model.ObjectLocator, error) {
-			switch userID {
+			switch id {
 			case "break-metadataRepo":
 				return "", errors.New(dummyError)
 			case "break-objectRepo":
@@ -150,25 +149,24 @@ func (b *metadataRepoMockBuilder) WithDelete() *metadataRepoMockBuilder {
 
 func (b *metadataRepoMockBuilder) WithGet() *metadataRepoMockBuilder {
 	b.metadataRepo.EXPECT().
-		Get(mock.Anything, mock.Anything, mock.Anything).
+		Get(mock.Anything, mock.Anything).
 		RunAndReturn(func(ctx context.Context,
-			userID model.UserID,
 			id model.DataID,
 		) (model.Metadata, model.ObjectLocator, error) {
-			switch userID {
+			switch id {
 			case "metadata-repo-error-user":
 				return model.Metadata{}, "", errors.New(dummyError)
 			case "brake-object-repo-get":
-				return model.Metadata{UserID: userID, ID: id},
+				return model.Metadata{ID: id},
 					"locator://error", nil
 			case "brake-read":
-				return model.Metadata{UserID: userID, ID: id},
+				return model.Metadata{ID: id},
 					"brake://read/closer/read", nil
 			case "brake-close":
-				return model.Metadata{UserID: userID, ID: id},
+				return model.Metadata{ID: id},
 					"brake://read/closer/close", nil
 			default:
-				return model.Metadata{UserID: userID, ID: id},
+				return model.Metadata{ID: id},
 					"locator://ok", nil
 			}
 		})

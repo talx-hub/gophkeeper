@@ -18,6 +18,7 @@ type TokenRepository struct {
 	DB
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func NewTokenRepository(pool *pgxpool.Pool, log *slog.Logger) *TokenRepository {
 	return &TokenRepository{
 		DB{
@@ -33,7 +34,7 @@ func (r *TokenRepository) Save(ctx context.Context,
 	saveLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
 
-		userUUID, err := ToPgUUID(userID)
+		userUUID, err := ToPgUUID(string(userID))
 		if err != nil {
 			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
 		}
@@ -65,7 +66,7 @@ func (r *TokenRepository) Validate(ctx context.Context, tokenHash []byte, userID
 	validateLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
 
-		userUUID, err := ToPgUUID(userID)
+		userUUID, err := ToPgUUID(string(userID))
 		if err != nil {
 			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
 		}
@@ -98,7 +99,7 @@ func (r *TokenRepository) Delete(ctx context.Context, tokenHash []byte) error {
 
 		err := queries.DeleteToken(ctx, tokenHash)
 		if err != nil {
-			return struct{}{}, fmt.Errorf("queries.Validate failed: %w", err)
+			return struct{}{}, fmt.Errorf("queries.Delete failed: %w", err)
 		}
 		return struct{}{}, nil
 	}

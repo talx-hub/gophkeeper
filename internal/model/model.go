@@ -8,15 +8,15 @@ type User struct {
 	PasswordPHC string
 	LoginHash   []byte
 }
-type DataID int64
+type DataID string
 
-type DataType int
+type DataType string
 
 const (
-	DataTypeUnspecified DataType = iota
-	DataTypeAuthenticationCredentials
-	DataTypeCard
-	DataTypeBinary
+	DataTypeUnspecified               DataType = "DataTypeUnspecified"
+	DataTypeAuthenticationCredentials          = "DataTypeAuthenticationCredentials"
+	DataTypeCard                               = "DataTypeCard"
+	DataTypeBinary                             = " DataTypeBinary"
 )
 
 type Metadata struct {

@@ -83,26 +83,6 @@ func (b *repoMockBuilder) WithCreate() *repoMockBuilder {
 	return b
 }
 
-func (b *repoMockBuilder) WithFindByID() *repoMockBuilder {
-	b.repo.EXPECT().
-		FindByID(mock.Anything, mock.Anything).
-		RunAndReturn(func(_ context.Context, uuid model.UserID) (model.User, error) {
-			if uuid == keyDBFail {
-				return model.User{}, errors.New("db error")
-			}
-			if uuid == "not-found" {
-				return model.User{}, model.ErrNotFound
-			}
-
-			return model.User{
-				LoginHash:   []byte("dummy-login"),
-				PasswordPHC: fixturePHC,
-			}, nil
-		})
-
-	return b
-}
-
 func (b *repoMockBuilder) WithDelete() *repoMockBuilder {
 	b.repo.EXPECT().
 		Delete(mock.Anything, mock.Anything).
@@ -198,9 +178,9 @@ func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
 				sealed []byte,
 			) (model.DataID, error) {
 				if userID == "error" {
-					return model.DataID(0), errors.New(msgExpectedError)
+					return "", errors.New(msgExpectedError)
 				}
-				return model.DataID(dummyID), nil
+				return dummyID, nil
 			})
 
 	return b

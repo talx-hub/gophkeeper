@@ -41,7 +41,7 @@ func TestGenerator_CheckAccessToken(t *testing.T) {
 	g := NewGenerator(secret)
 
 	t.Run("valid token", func(t *testing.T) {
-		tokenStr, err := g.GenerateAccessToken(context.Background(), model.UserID("user-123"))
+		tokenStr, err := g.GenerateAccessToken(context.Background(), "user-123")
 		require.NoError(t, err)
 		subj, err := g.CheckAccessToken(context.Background(), tokenStr)
 		require.NoError(t, err)

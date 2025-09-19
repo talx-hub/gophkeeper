@@ -15,7 +15,7 @@ import (
 const msgExpectedError = "expected error"
 const keyDBFail = "db-fail"
 const keyDummyUserID = "dummy-user-id"
-const dummyID = 42
+const dummyID = "dummyUUID"
 const dummySecret = "secret"
 const keySessionFail = "session-fail"
 

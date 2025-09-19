@@ -15,7 +15,7 @@ message Metadata {
     DATA_TYPE_BINARY      = 3;
   }
   DataType data_type                    = 1; // Один из типов хранимых данных
-  int64 id                              = 2; // Уникальный идентификатор записи
+  string id                             = 2; // Уникальный идентификатор записи
   string name                           = 3; // Человекочитаемое имя
   string description                    = 4; // Заметка
   google.protobuf.Timestamp created_at  = 5; // Время создания

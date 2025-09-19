@@ -283,7 +283,6 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 }
 
 func TestKeeperGRPCService_Get(t *testing.T) {
-	dummyID := int64(42)
 	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 	correctResponse := &keeperpb.GetResponse{
 		Metadata: &metadatapb.Metadata{
@@ -445,7 +444,7 @@ func TestKeeperGRPCService_List(t *testing.T) {
 				Metadata: []*metadatapb.Metadata{
 					{
 						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-						Id:          ptr(int64(dummyID)),
+						Id:          ptr(dummyID),
 						Name:        ptr("data1"),
 						Description: ptr(""),
 						CreatedAt:   timestamppb.New(dummyTime),
@@ -461,14 +460,14 @@ func TestKeeperGRPCService_List(t *testing.T) {
 				Metadata: []*metadatapb.Metadata{
 					{
 						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-						Id:          ptr(int64(dummyID)),
+						Id:          ptr(dummyID),
 						Name:        ptr("data1"),
 						Description: ptr(""),
 						CreatedAt:   timestamppb.New(dummyTime),
 					},
 					{
 						DataType:    ptr(metadatapb.Metadata_DATA_TYPE_UNSPECIFIED),
-						Id:          ptr(int64(dummyID)),
+						Id:          ptr(dummyID),
 						Name:        ptr("data2"),
 						Description: ptr(""),
 						CreatedAt:   timestamppb.New(dummyTime),
@@ -497,7 +496,6 @@ func TestKeeperGRPCService_List(t *testing.T) {
 }
 
 func TestKeeperGRPCService_Sync(t *testing.T) {
-	dummyID := int64(42)
 	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 	correctResponse := &keeperpb.SyncResponse{
 		Metadata: &metadatapb.Metadata{

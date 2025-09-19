@@ -87,3 +87,23 @@ check-coverage:
 
 sqlc:
 	sqlc generate
+
+.PHONY: migrate
+migrate:
+	docker run --rm \
+		-v $(realpath ./sql/migrations):/migrations \
+		--network=gophkeeper-network \
+		migrate/migrate:v4.18.3 \
+			-path=/migrations \
+			-database postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable \
+			up
+
+.PHONY: migrate-force
+migrate-force:
+	docker run --rm \
+	-v $(realpath ./sql/migrations):/migrations \
+	--network=gophkeeper-network \
+	migrate/migrate:v4.18.3 \
+		-path=/migrations \
+		-database postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable \
+		drop -f

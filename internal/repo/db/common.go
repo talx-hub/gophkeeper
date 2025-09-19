@@ -11,8 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/talx-hub/gophkeeper/internal/model"
 )
 
 type DB struct {
@@ -20,8 +18,8 @@ type DB struct {
 	log  *slog.Logger
 }
 
-func ToPgUUID(id model.UserID) (pgtype.UUID, error) {
-	u, err := uuid.Parse(string(id))
+func ToPgUUID(id string) (pgtype.UUID, error) {
+	u, err := uuid.Parse(id)
 	if err != nil {
 		return pgtype.UUID{}, err
 	}

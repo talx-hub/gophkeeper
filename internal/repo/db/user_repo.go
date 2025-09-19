@@ -15,6 +15,7 @@ type UserRepository struct {
 	DB
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func NewUserRepository(pool *pgxpool.Pool, log *slog.Logger) *UserRepository {
 	return &UserRepository{
 		DB{
@@ -34,7 +35,7 @@ func (r *UserRepository) Create(ctx context.Context, u *model.User) (model.UserI
 				PasswordPhc: u.PasswordPHC,
 			})
 		if err != nil {
-			return "", fmt.Errorf("queries.Save failed: %w", err)
+			return "", fmt.Errorf("queries.Create failed: %w", err)
 		}
 		return model.UserID(userID.String()), nil
 	}
@@ -58,7 +59,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, loginHash []byte) (mod
 
 		data, err := queries.FindByLogin(ctx, loginHash)
 		if err != nil {
-			return userProxy{}, fmt.Errorf("queries.Save failed: %w", err)
+			return userProxy{}, fmt.Errorf("queries.FindByLogin failed: %w", err)
 		}
 
 		return userProxy{
@@ -80,14 +81,14 @@ func (r *UserRepository) Delete(ctx context.Context, uuid model.UserID) error {
 	deleteLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
 
-		pgID, err := ToPgUUID(uuid)
+		pgID, err := ToPgUUID(string(uuid))
 		if err != nil {
 			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
 		}
 
 		err = queries.DeleteUser(ctx, pgID)
 		if err != nil {
-			return struct{}{}, fmt.Errorf("queries.Validate failed: %w", err)
+			return struct{}{}, fmt.Errorf("queries.Delete failed: %w", err)
 		}
 		return struct{}{}, nil
 	}

@@ -116,6 +116,7 @@ type Fluent struct {
 	err error
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func FluentNew(dsn string, migrationsFS fs.FS, log *slog.Logger) *Fluent {
 	return &Fluent{
 		m: New(dsn, migrationsFS, log),

@@ -29,7 +29,7 @@ func TestService_AddSealed(t *testing.T) {
 			metadataRepoMock: mocks.NewMockMetadataRepo(t),
 			userID:           "",
 			wantErr:          true,
-			wantDataID:       0,
+			wantDataID:       "",
 		},
 		{
 			name:             "nil metadata",
@@ -37,7 +37,7 @@ func TestService_AddSealed(t *testing.T) {
 			metadataRepoMock: mocks.NewMockMetadataRepo(t),
 			userID:           "user1",
 			wantErr:          true,
-			wantDataID:       0,
+			wantDataID:       "",
 		},
 		{
 			name:             "nil sealed data",
@@ -53,7 +53,7 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     nil,
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
 			name:             "empty sealed data",
@@ -69,7 +69,7 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     []byte{},
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
 			name:             "unsupported data type",
@@ -85,7 +85,7 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     []byte("some secret bytes"),
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
 			name:             "objectRepo.Put() failed",
@@ -101,10 +101,10 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     []byte("some secret bytes"),
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
-			name:             "metadataRepo.Create() failed",
+			name:             "metadataRepo.Put() failed",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithPut().WithDelete().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithCreate().Build(),
 			userID:           "create-error-user",
@@ -117,10 +117,10 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     []byte("some secret bytes"),
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
-			name:             "metadataRepo.Create() failed && objectRepo.Delete() fail",
+			name:             "metadataRepo.Put() failed && objectRepo.Delete() fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithPut().WithDelete().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithCreate().Build(),
 			userID:           "create-and-delete-error-user",
@@ -133,7 +133,7 @@ func TestService_AddSealed(t *testing.T) {
 			},
 			sealed:     []byte("some secret bytes"),
 			wantErr:    true,
-			wantDataID: 0,
+			wantDataID: "",
 		},
 		{
 			name:             "ok",
@@ -174,64 +174,50 @@ func TestService_GetSealed(t *testing.T) {
 		objectRepoMock   *mocks.MockObjectRepo
 		metadataRepoMock *mocks.MockMetadataRepo
 		name             string
-		userID           model.UserID
 		id               model.DataID
 		cbFake           StreamCallback
 		wantError        bool
 	}{
 		{
-			name:             "userID is empty",
-			objectRepoMock:   mocks.NewMockObjectRepo(t),
-			metadataRepoMock: mocks.NewMockMetadataRepo(t),
-			userID:           "",
-			wantError:        true,
-		},
-		{
 			name:             "dataID is empty",
 			objectRepoMock:   mocks.NewMockObjectRepo(t),
 			metadataRepoMock: mocks.NewMockMetadataRepo(t),
-			userID:           "user-ok",
-			id:               0,
+			id:               "",
 			wantError:        true,
 		},
 		{
 			name:             "metadataRepo.Get() fail",
 			objectRepoMock:   mocks.NewMockObjectRepo(t),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "metadata-repo-error-user",
-			id:               dummyDataID,
+			id:               "metadata-repo-error-user",
 			wantError:        true,
 		},
 		{
 			name:             "objectRepo.Get() fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "brake-object-repo-get",
-			id:               dummyDataID,
+			id:               "brake-object-repo-get",
 			wantError:        true,
 		},
 		{
 			name:             "io.ReadAll() from objectRepo fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "brake-read",
-			id:               dummyDataID,
+			id:               "brake-read",
 			wantError:        true,
 		},
 		{
 			name:             "readCloser.Close() from objectRepo fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "brake-close",
-			id:               dummyDataID,
+			id:               "brake-close",
 			wantError:        true,
 		},
 		{
 			name:             "callback fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "user-ok",
-			id:               dummyDataID,
+			id:               "user-ok",
 			cbFake:           fakeErrorCallback,
 			wantError:        true,
 		},
@@ -239,8 +225,7 @@ func TestService_GetSealed(t *testing.T) {
 			name:             "ok",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithGet().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithGet().Build(),
-			userID:           "user-ok",
-			id:               dummyDataID,
+			id:               "user-ok",
 			cbFake:           fakeOKCallback,
 			wantError:        false,
 		},
@@ -249,7 +234,7 @@ func TestService_GetSealed(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := NewService(tt.objectRepoMock, tt.metadataRepoMock)
-			err := service.GetSealed(context.Background(), tt.userID, tt.id, tt.cbFake)
+			err := service.GetSealed(context.Background(), tt.id, tt.cbFake)
 			if tt.wantError {
 				require.Error(t, err)
 			} else {
@@ -307,48 +292,35 @@ func TestService_Delete(t *testing.T) {
 		name             string
 		objectRepoMock   *mocks.MockObjectRepo
 		metadataRepoMock *mocks.MockMetadataRepo
-		userID           model.UserID
 		dataID           model.DataID
 		wantError        bool
 	}{
 		{
-			name:             "userID empty",
-			objectRepoMock:   mocks.NewMockObjectRepo(t),
-			metadataRepoMock: mocks.NewMockMetadataRepo(t),
-			userID:           "",
-			dataID:           dummyDataID,
-			wantError:        true,
-		},
-		{
 			name:             "dataID empty",
 			objectRepoMock:   mocks.NewMockObjectRepo(t),
 			metadataRepoMock: mocks.NewMockMetadataRepo(t),
-			userID:           "ok-user",
-			dataID:           0,
+			dataID:           "",
 			wantError:        true,
 		},
 		{
 			name:             "metadataRepo.Delete() fail",
 			objectRepoMock:   mocks.NewMockObjectRepo(t),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
-			userID:           "break-metadataRepo",
-			dataID:           dummyDataID,
+			dataID:           "break-metadataRepo",
 			wantError:        true,
 		},
 		{
 			name:             "objectRepo.Delete() fail",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithDelete().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
-			userID:           "break-objectRepo",
-			dataID:           dummyDataID,
+			dataID:           "break-objectRepo",
 			wantError:        true,
 		},
 		{
 			name:             "ok",
 			objectRepoMock:   newObjectRepoMockBuilder(t).WithDelete().Build(),
 			metadataRepoMock: newMetadataRepoMockBuilder(t).WithDelete().Build(),
-			userID:           "ok-user",
-			dataID:           dummyDataID,
+			dataID:           "ok-user",
 			wantError:        false,
 		},
 	}
@@ -356,7 +328,7 @@ func TestService_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := NewService(tt.objectRepoMock, tt.metadataRepoMock)
-			err := service.Delete(context.Background(), tt.userID, tt.dataID)
+			err := service.Delete(context.Background(), tt.dataID)
 			if tt.wantError {
 				require.Error(t, err)
 			} else {
