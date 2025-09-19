@@ -84,3 +84,6 @@ test:
 .PHONY : check-coverage
 check-coverage:
 	go tool cover -html cover.filtered.out
+
+sqlc:
+	sqlc generate
