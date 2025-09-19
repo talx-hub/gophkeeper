@@ -32,6 +32,7 @@ func (r *TokenRepository) Save(ctx context.Context,
 ) error {
 	saveLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
+
 		userUUID, err := ToPgUUID(userID)
 		if err != nil {
 			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
@@ -63,6 +64,7 @@ func (r *TokenRepository) Save(ctx context.Context,
 func (r *TokenRepository) Validate(ctx context.Context, tokenHash []byte, userID model.UserID) error {
 	validateLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
+
 		userUUID, err := ToPgUUID(userID)
 		if err != nil {
 			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
@@ -94,7 +96,7 @@ func (r *TokenRepository) Delete(ctx context.Context, tokenHash []byte) error {
 	deleteLogic := func() (struct{}, error) {
 		queries := sqlc.New(r.pool)
 
-		err := queries.Delete(ctx, tokenHash)
+		err := queries.DeleteToken(ctx, tokenHash)
 		if err != nil {
 			return struct{}{}, fmt.Errorf("queries.Validate failed: %w", err)
 		}

@@ -31,7 +31,6 @@ type SessionService interface {
 type UserRepository interface {
 	Create(ctx context.Context, u *model.User) (model.UserID, error)
 	FindByLogin(ctx context.Context, loginHash []byte) (model.UserID, model.User, error)
-	FindByID(ctx context.Context, uuid model.UserID) (model.User, error)
 	Delete(ctx context.Context, uuid model.UserID) error
 }
 

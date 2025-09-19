@@ -11,13 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const delete = `-- name: Delete :exec
+const deleteToken = `-- name: DeleteToken :exec
 DELETE FROM refresh_tokens
 WHERE token_hash = $1
 `
 
-func (q *Queries) Delete(ctx context.Context, tokenHash []byte) error {
-	_, err := q.db.Exec(ctx, delete, tokenHash)
+func (q *Queries) DeleteToken(ctx context.Context, tokenHash []byte) error {
+	_, err := q.db.Exec(ctx, deleteToken, tokenHash)
 	return err
 }
 

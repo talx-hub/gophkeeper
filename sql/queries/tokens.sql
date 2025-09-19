@@ -14,6 +14,6 @@ SELECT EXISTS (
           expires_at > NOW()
 ) AS found;
 
--- name: Delete :exec
+-- name: DeleteToken :exec
 DELETE FROM refresh_tokens
 WHERE token_hash = $1;
