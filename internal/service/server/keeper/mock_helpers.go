@@ -40,7 +40,7 @@ func (b *objectRepoMockBuilder) WithPut() *objectRepoMockBuilder {
 			ctx context.Context,
 			meta *model.Metadata,
 			r io.Reader,
-			size uint64,
+			size int32,
 			sha256 []byte,
 		) (model.ObjectLocator, error) {
 			switch meta.UserID {

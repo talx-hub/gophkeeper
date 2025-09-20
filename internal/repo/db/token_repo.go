@@ -36,7 +36,7 @@ func (r *TokenRepository) Save(ctx context.Context,
 
 		userUUID, err := ToPgUUID(string(userID))
 		if err != nil {
-			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
+			return struct{}{}, fmt.Errorf(msgWrongUserID, err)
 		}
 
 		err = queries.Save(ctx,
@@ -56,7 +56,7 @@ func (r *TokenRepository) Save(ctx context.Context,
 
 	_, err := WithRetry[struct{}](saveLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return err
 	}
 	return nil
@@ -68,7 +68,7 @@ func (r *TokenRepository) Validate(ctx context.Context, tokenHash []byte, userID
 
 		userUUID, err := ToPgUUID(string(userID))
 		if err != nil {
-			return struct{}{}, fmt.Errorf("wrong userID format: %w", err)
+			return struct{}{}, fmt.Errorf(msgWrongUserID, err)
 		}
 
 		ok, err := queries.Validate(ctx,
@@ -87,7 +87,7 @@ func (r *TokenRepository) Validate(ctx context.Context, tokenHash []byte, userID
 
 	_, err := WithRetry[struct{}](validateLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return err
 	}
 	return nil
@@ -106,7 +106,7 @@ func (r *TokenRepository) Delete(ctx context.Context, tokenHash []byte) error {
 
 	_, err := WithRetry[struct{}](deleteLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return err
 	}
 	return nil

@@ -11,6 +11,8 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/repo/db/internal/sqlc"
 )
 
+const msgWrongUserID = "wrong userID format: %w"
+
 type UserRepository struct {
 	DB
 }
@@ -42,7 +44,7 @@ func (r *UserRepository) Create(ctx context.Context, u *model.User) (model.UserI
 
 	userID, err := WithRetry[model.UserID](createLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return "", err
 	}
 	return userID, nil
@@ -71,7 +73,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, loginHash []byte) (mod
 
 	proxy, err := WithRetry[userProxy](findLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return "", model.User{}, err
 	}
 	return proxy.id, proxy.user, nil
@@ -95,7 +97,7 @@ func (r *UserRepository) Delete(ctx context.Context, uuid model.UserID) error {
 
 	_, err := WithRetry[struct{}](deleteLogic, 0)
 	if err != nil {
-		//nolint:wrapcheck // reason: err from wrapped func
+		//nolint // reason: err from wrapped func
 		return err
 	}
 	return nil

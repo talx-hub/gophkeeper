@@ -21,7 +21,7 @@ type DB struct {
 func ToPgUUID(id string) (pgtype.UUID, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
-		return pgtype.UUID{}, err
+		return pgtype.UUID{}, fmt.Errorf("uuid.Parse(): %w", err)
 	}
 	return pgtype.UUID{Bytes: u, Valid: true}, nil
 }

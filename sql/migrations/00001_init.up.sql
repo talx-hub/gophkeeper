@@ -32,9 +32,9 @@ BEGIN TRANSACTION;
         ON objects (id_data_type);
 
     CREATE TABLE secret_blobs (
-                                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                  objects_id  UUID NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
-                                  sealed      BYTEA NOT NULL
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        objects_id  UUID NOT NULL REFERENCES objects(id) ON DELETE CASCADE,
+        sealed      BYTEA NOT NULL
     );
 
     CREATE TABLE chunk_manifest (
@@ -46,6 +46,17 @@ BEGIN TRANSACTION;
         UNIQUE (blob_id)
     );
 
+    -- Делаем (objects_id, id) уникальной парой в secret_blobs,
+    -- чтобы по ней можно было сослаться из chunk_manifest.
+    ALTER TABLE secret_blobs
+        ADD CONSTRAINT uq_secret_blobs_objid_id UNIQUE (objects_id, id);
+
+    -- Гарантируем, что chunk_manifest.blob_id принадлежит тому же objects_id.
+    ALTER TABLE chunk_manifest
+        ADD CONSTRAINT fk_manifest_blob_same_object
+            FOREIGN KEY (objects_id, blob_id)
+                REFERENCES secret_blobs (objects_id, id)
+                ON DELETE CASCADE;
 
     CREATE INDEX idx_secret_blobs_object ON secret_blobs(objects_id);
 COMMIT;

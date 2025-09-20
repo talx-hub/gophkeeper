@@ -165,7 +165,7 @@ func (_c *MockObjectRepo_Get_Call) RunAndReturn(run func(ctx context.Context, lo
 }
 
 // Put provides a mock function for the type MockObjectRepo
-func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, error) {
+func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io.Reader, size int32, sha256 []byte) (model.ObjectLocator, error) {
 	ret := _mock.Called(ctx, meta, r, size, sha256)
 
 	if len(ret) == 0 {
@@ -174,15 +174,15 @@ func (_mock *MockObjectRepo) Put(ctx context.Context, meta *model.Metadata, r io
 
 	var r0 model.ObjectLocator
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) (model.ObjectLocator, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, int32, []byte) (model.ObjectLocator, error)); ok {
 		return returnFunc(ctx, meta, r, size, sha256)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) model.ObjectLocator); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Metadata, io.Reader, int32, []byte) model.ObjectLocator); ok {
 		r0 = returnFunc(ctx, meta, r, size, sha256)
 	} else {
 		r0 = ret.Get(0).(model.ObjectLocator)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, io.Reader, uint64, []byte) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Metadata, io.Reader, int32, []byte) error); ok {
 		r1 = returnFunc(ctx, meta, r, size, sha256)
 	} else {
 		r1 = ret.Error(1)
@@ -199,13 +199,13 @@ type MockObjectRepo_Put_Call struct {
 //   - ctx context.Context
 //   - meta *model.Metadata
 //   - r io.Reader
-//   - size uint64
+//   - size int32
 //   - sha256 []byte
 func (_e *MockObjectRepo_Expecter) Put(ctx interface{}, meta interface{}, r interface{}, size interface{}, sha256 interface{}) *MockObjectRepo_Put_Call {
 	return &MockObjectRepo_Put_Call{Call: _e.mock.On("Put", ctx, meta, r, size, sha256)}
 }
 
-func (_c *MockObjectRepo_Put_Call) Run(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte)) *MockObjectRepo_Put_Call {
+func (_c *MockObjectRepo_Put_Call) Run(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size int32, sha256 []byte)) *MockObjectRepo_Put_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -219,9 +219,9 @@ func (_c *MockObjectRepo_Put_Call) Run(run func(ctx context.Context, meta *model
 		if args[2] != nil {
 			arg2 = args[2].(io.Reader)
 		}
-		var arg3 uint64
+		var arg3 int32
 		if args[3] != nil {
-			arg3 = args[3].(uint64)
+			arg3 = args[3].(int32)
 		}
 		var arg4 []byte
 		if args[4] != nil {
@@ -243,7 +243,7 @@ func (_c *MockObjectRepo_Put_Call) Return(objectLocator model.ObjectLocator, err
 	return _c
 }
 
-func (_c *MockObjectRepo_Put_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte) (model.ObjectLocator, error)) *MockObjectRepo_Put_Call {
+func (_c *MockObjectRepo_Put_Call) RunAndReturn(run func(ctx context.Context, meta *model.Metadata, r io.Reader, size int32, sha256 []byte) (model.ObjectLocator, error)) *MockObjectRepo_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -14,9 +14,9 @@ type DataType string
 
 const (
 	DataTypeUnspecified               DataType = "DataTypeUnspecified"
-	DataTypeAuthenticationCredentials          = "DataTypeAuthenticationCredentials"
-	DataTypeCard                               = "DataTypeCard"
-	DataTypeBinary                             = " DataTypeBinary"
+	DataTypeAuthenticationCredentials DataType = "DataTypeAuthenticationCredentials"
+	DataTypeCard                      DataType = "DataTypeCard"
+	DataTypeBinary                    DataType = " DataTypeBinary"
 )
 
 type Metadata struct {

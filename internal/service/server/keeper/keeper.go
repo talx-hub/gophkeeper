@@ -46,7 +46,7 @@ type ObjectRepo interface {
 	// sha256, если передан (len==32), используется для проверки целостности
 	// записанных данных.
 	// Возвращает локатор объекта и фактические сведения о записи.
-	Put(ctx context.Context, meta *model.Metadata, r io.Reader, size uint64, sha256 []byte,
+	Put(ctx context.Context, meta *model.Metadata, r io.Reader, size int32, sha256 []byte,
 	) (model.ObjectLocator, error)
 
 	// Get возвращает поток для чтения объекта и сведения о нём.
@@ -113,7 +113,7 @@ func (s *Service) AddSealed(ctx context.Context,
 	defer cancel1()
 	sum := sha256.Sum256(sealed)
 	loc, err := s.objectRepo.Put(
-		ctx1, meta, bytes.NewReader(sealed), uint64(len(sealed)), sum[:])
+		ctx1, meta, bytes.NewReader(sealed), int32(len(sealed)), sum[:])
 	if err != nil {
 		return "", fmt.Errorf("failed to put sealed data to object repo: %w", err)
 	}

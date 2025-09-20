@@ -256,8 +256,8 @@ func (s *KeeperGRPCService) List(ctx context.Context, _ *keeperpb.ListRequest,
 	}
 
 	listDTO := make([]*metadatapb.Metadata, len(metaLocs))
-	for i, elem := range metaLocs {
-		listDTO[i] = metadata.ToProtoMetadata(&elem.Meta)
+	for i := range metaLocs {
+		listDTO[i] = metadata.ToProtoMetadata(&metaLocs[i].Meta)
 	}
 
 	return &keeperpb.ListResponse{
