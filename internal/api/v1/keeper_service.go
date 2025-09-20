@@ -64,10 +64,10 @@ type KeeperUseCase interface {
 	AddSealed(ctx context.Context, userID model.UserID, meta *model.Metadata, sealed []byte) (model.DataID, error)
 
 	// Delete удаляет объект и его метаданные.
-	Delete(ctx context.Context, userID model.UserID, id model.DataID) error
+	Delete(ctx context.Context, id model.DataID) error
 
 	// GetSealed получает объект по id и отправляет его наружу через callback (возможен поток чанков).
-	GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error
+	GetSealed(ctx context.Context, id model.DataID, callback keeper.StreamCallback) error
 
 	// List возвращает список метаданных для секретов пользователя.
 	List(ctx context.Context, userID model.UserID) ([]model.MetaLoc, error)
@@ -171,7 +171,7 @@ func (s *KeeperGRPCService) Delete(ctx context.Context, req *keeperpb.DeleteRequ
 		return nil, status.Error(codes.InvalidArgument, MsgAgentWrong)
 	}
 
-	err := s.keeperUseCase.Delete(ctx, userID, model.DataID(metaDTO.GetId()))
+	err := s.keeperUseCase.Delete(ctx, model.DataID(metaDTO.GetId()))
 	if err != nil {
 		s.log.ErrorContext(ctx,
 			"delete failed",
@@ -212,7 +212,7 @@ func (s *KeeperGRPCService) Get(
 	}
 
 	// запускаем use-case -- он питюкает в stream через коллбек
-	err := s.keeperUseCase.GetSealed(ctx, userID, model.DataID(metaDTO.GetId()),
+	err := s.keeperUseCase.GetSealed(ctx, model.DataID(metaDTO.GetId()),
 		func(m *model.Metadata, sealed []byte) error {
 			//nolint:wrapcheck // reason: error from callback
 			return stream.Send(

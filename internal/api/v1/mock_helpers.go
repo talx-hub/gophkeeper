@@ -188,14 +188,13 @@ func (b *useCaseMockBuilder) WithAddSealed() *useCaseMockBuilder {
 
 func (b *useCaseMockBuilder) WithDelete() *useCaseMockBuilder {
 	b.usecase.EXPECT().
-		Delete(mock.Anything, mock.Anything, mock.Anything).
+		Delete(mock.Anything, mock.Anything).
 		RunAndReturn(
 			func(
 				ctx context.Context,
-				userID model.UserID,
 				id model.DataID,
 			) error {
-				if userID == "error" {
+				if id == "brake-delete" {
 					return errors.New(msgExpectedError)
 				}
 				return nil
@@ -208,15 +207,14 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 	dummyTime, _ := time.Parse(time.RFC3339, time.RFC3339)
 
 	b.usecase.EXPECT().
-		GetSealed(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		GetSealed(mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
 			func(
 				ctx context.Context,
-				userID model.UserID,
 				id model.DataID,
 				callback keeper.StreamCallback,
 			) error {
-				if userID == "error" {
+				if id == "brake-get" {
 					return errors.New(msgExpectedError)
 				}
 
@@ -224,7 +222,6 @@ func (b *useCaseMockBuilder) WithGetSealed() *useCaseMockBuilder {
 					&model.Metadata{
 						CreatedAt:       dummyTime,
 						ChunkDescriptor: nil,
-						UserID:          userID,
 						Name:            "dummy name",
 						Description:     "dummy description",
 						ID:              dummyID,
@@ -259,7 +256,6 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 					{
 						Locator: "pg:/single-data/data1",
 						Meta: model.Metadata{
-							UserID:      "single-data",
 							Name:        "data1",
 							ID:          dummyID,
 							DataType:    model.DataTypeUnspecified,
@@ -273,7 +269,6 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 					{
 						Locator: "pg://multiple-data/data1",
 						Meta: model.Metadata{
-							UserID:      "multiple-data",
 							Name:        "data1",
 							ID:          dummyID,
 							DataType:    model.DataTypeUnspecified,
@@ -284,7 +279,6 @@ func (b *useCaseMockBuilder) WithList() *useCaseMockBuilder {
 					{
 						Locator: "s3://multiple-data/data2",
 						Meta: model.Metadata{
-							UserID:      "multiple-data",
 							Name:        "data2",
 							ID:          dummyID,
 							DataType:    model.DataTypeUnspecified,
@@ -319,7 +313,6 @@ func (b *useCaseMockBuilder) WithSync() *useCaseMockBuilder {
 			metadata := &model.Metadata{
 				CreatedAt:       dummyTime,
 				ChunkDescriptor: nil,
-				UserID:          userID,
 				Name:            "dummy name",
 				Description:     "dummy description",
 				ID:              dummyID,

@@ -118,16 +118,16 @@ func (_c *MockKeeperUseCase_AddSealed_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // Delete provides a mock function for the type MockKeeperUseCase
-func (_mock *MockKeeperUseCase) Delete(ctx context.Context, userID model.UserID, id model.DataID) error {
-	ret := _mock.Called(ctx, userID, id)
+func (_mock *MockKeeperUseCase) Delete(ctx context.Context, id model.DataID) error {
+	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Delete")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID) error); ok {
-		r0 = returnFunc(ctx, userID, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID) error); ok {
+		r0 = returnFunc(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -141,30 +141,24 @@ type MockKeeperUseCase_Delete_Call struct {
 
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID model.UserID
 //   - id model.DataID
-func (_e *MockKeeperUseCase_Expecter) Delete(ctx interface{}, userID interface{}, id interface{}) *MockKeeperUseCase_Delete_Call {
-	return &MockKeeperUseCase_Delete_Call{Call: _e.mock.On("Delete", ctx, userID, id)}
+func (_e *MockKeeperUseCase_Expecter) Delete(ctx interface{}, id interface{}) *MockKeeperUseCase_Delete_Call {
+	return &MockKeeperUseCase_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
 }
 
-func (_c *MockKeeperUseCase_Delete_Call) Run(run func(ctx context.Context, userID model.UserID, id model.DataID)) *MockKeeperUseCase_Delete_Call {
+func (_c *MockKeeperUseCase_Delete_Call) Run(run func(ctx context.Context, id model.DataID)) *MockKeeperUseCase_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.UserID
+		var arg1 model.DataID
 		if args[1] != nil {
-			arg1 = args[1].(model.UserID)
-		}
-		var arg2 model.DataID
-		if args[2] != nil {
-			arg2 = args[2].(model.DataID)
+			arg1 = args[1].(model.DataID)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -175,22 +169,22 @@ func (_c *MockKeeperUseCase_Delete_Call) Return(err error) *MockKeeperUseCase_De
 	return _c
 }
 
-func (_c *MockKeeperUseCase_Delete_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID, id model.DataID) error) *MockKeeperUseCase_Delete_Call {
+func (_c *MockKeeperUseCase_Delete_Call) RunAndReturn(run func(ctx context.Context, id model.DataID) error) *MockKeeperUseCase_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetSealed provides a mock function for the type MockKeeperUseCase
-func (_mock *MockKeeperUseCase) GetSealed(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error {
-	ret := _mock.Called(ctx, userID, id, callback)
+func (_mock *MockKeeperUseCase) GetSealed(ctx context.Context, id model.DataID, callback keeper.StreamCallback) error {
+	ret := _mock.Called(ctx, id, callback)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSealed")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.UserID, model.DataID, keeper.StreamCallback) error); ok {
-		r0 = returnFunc(ctx, userID, id, callback)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.DataID, keeper.StreamCallback) error); ok {
+		r0 = returnFunc(ctx, id, callback)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -204,36 +198,30 @@ type MockKeeperUseCase_GetSealed_Call struct {
 
 // GetSealed is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID model.UserID
 //   - id model.DataID
 //   - callback keeper.StreamCallback
-func (_e *MockKeeperUseCase_Expecter) GetSealed(ctx interface{}, userID interface{}, id interface{}, callback interface{}) *MockKeeperUseCase_GetSealed_Call {
-	return &MockKeeperUseCase_GetSealed_Call{Call: _e.mock.On("GetSealed", ctx, userID, id, callback)}
+func (_e *MockKeeperUseCase_Expecter) GetSealed(ctx interface{}, id interface{}, callback interface{}) *MockKeeperUseCase_GetSealed_Call {
+	return &MockKeeperUseCase_GetSealed_Call{Call: _e.mock.On("GetSealed", ctx, id, callback)}
 }
 
-func (_c *MockKeeperUseCase_GetSealed_Call) Run(run func(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback)) *MockKeeperUseCase_GetSealed_Call {
+func (_c *MockKeeperUseCase_GetSealed_Call) Run(run func(ctx context.Context, id model.DataID, callback keeper.StreamCallback)) *MockKeeperUseCase_GetSealed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.UserID
+		var arg1 model.DataID
 		if args[1] != nil {
-			arg1 = args[1].(model.UserID)
+			arg1 = args[1].(model.DataID)
 		}
-		var arg2 model.DataID
+		var arg2 keeper.StreamCallback
 		if args[2] != nil {
-			arg2 = args[2].(model.DataID)
-		}
-		var arg3 keeper.StreamCallback
-		if args[3] != nil {
-			arg3 = args[3].(keeper.StreamCallback)
+			arg2 = args[2].(keeper.StreamCallback)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -244,7 +232,7 @@ func (_c *MockKeeperUseCase_GetSealed_Call) Return(err error) *MockKeeperUseCase
 	return _c
 }
 
-func (_c *MockKeeperUseCase_GetSealed_Call) RunAndReturn(run func(ctx context.Context, userID model.UserID, id model.DataID, callback keeper.StreamCallback) error) *MockKeeperUseCase_GetSealed_Call {
+func (_c *MockKeeperUseCase_GetSealed_Call) RunAndReturn(run func(ctx context.Context, id model.DataID, callback keeper.StreamCallback) error) *MockKeeperUseCase_GetSealed_Call {
 	_c.Call.Return(run)
 	return _c
 }

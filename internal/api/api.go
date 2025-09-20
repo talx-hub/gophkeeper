@@ -6,9 +6,14 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
 	v1 "github.com/talx-hub/gophkeeper/internal/api/v1"
+	"github.com/talx-hub/gophkeeper/internal/model"
+	"github.com/talx-hub/gophkeeper/internal/repo/db"
+	"github.com/talx-hub/gophkeeper/internal/repo/router"
+	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
 	"github.com/talx-hub/gophkeeper/pkg/session"
 	"github.com/talx-hub/gophkeeper/pkg/tokens"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
@@ -16,18 +21,23 @@ import (
 	keeperpb "github.com/talx-hub/gophkeeper/proto/v1/keeper"
 )
 
+type DBManager interface {
+	GetPool() (*pgxpool.Pool, error)
+}
+
 type Server struct {
 	grpcServer *grpc.Server
 	log        *slog.Logger
-	// storageManager StorageManager
+	dbManager  DBManager
 	// cfg *server.Builder
 	address string // TODO: fill address from cfg
 }
 
-func NewServer(address string, log *slog.Logger) *Server {
+func NewServer(address string, dbManager DBManager, log *slog.Logger) *Server {
 	return &Server{
 		address:    address,
 		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
+		dbManager:  dbManager,
 		log:        log,
 	}
 }
@@ -39,22 +49,28 @@ func (s *Server) Start() error {
 			"failed to start listening on address %s: %w", s.address, err)
 	}
 
-	// TODO: fill repo
-	// TODO: fill secret from cfg
-	authpb.RegisterAuthServiceServer(s.grpcServer,
-		v1.NewAuthService(
-			s.log,
-			nil,
-			session.NewManager(nil, tokens.NewGenerator([]byte("TODO: secret"))),
-		))
+	pool, err := s.dbManager.GetPool()
+	if err != nil {
+		msg := "get pgxpool.Pool"
+		s.log.ErrorContext(context.Background(), msg, model.KeyLoggerError, err)
+		return fmt.Errorf("%s: %w", msg, err)
+	}
 
 	healthpb.RegisterHealthServiceServer(s.grpcServer,
 		v1.NewHealthService(
 			s.log,
-			nil,
+			pool,
 		))
 
-	keeperpb.RegisterKeeperServer(s.grpcServer, &v1.KeeperGRPCService{})
+	userRepo, tokenRepo, keeperRepo := prepareRepos(pool, s.log)
+	authpb.RegisterAuthServiceServer(s.grpcServer,
+		v1.NewAuthService(s.log, userRepo,
+			// TODO: fill secret from cfg
+			session.NewManager(tokenRepo, tokens.NewGenerator([]byte("TODO: secret"))),
+		))
+
+	keeperpb.RegisterKeeperServer(s.grpcServer,
+		v1.NewKeeperGRPCService(s.log, keeperRepo))
 
 	//nolint:wrapcheck // error could be nil
 	return s.grpcServer.Serve(lis)
@@ -75,4 +91,26 @@ func (s *Server) Stop(ctx context.Context) error {
 	case <-done:
 		return nil
 	}
+}
+
+func prepareRepos(pool *pgxpool.Pool, log *slog.Logger) (
+	v1.UserRepository,
+	session.RefreshTokenStorage,
+	v1.KeeperUseCase,
+) {
+	userRepo := db.NewUserRepository(pool, log)
+	tokenRepo := db.NewTokenRepository(pool, log)
+	metadataRepo := db.NewMetadataRepository(pool, log)
+	objectsStorage := db.NewObjectRepository(pool, log)
+
+	//nolint:exhaustive // reason: missing UnspecifiedKey -- is OK
+	reposByType := map[model.DataType]keeper.ObjectRepo{
+		model.DataTypeBinary:                    objectsStorage,
+		model.DataTypeCard:                      objectsStorage,
+		model.DataTypeAuthenticationCredentials: objectsStorage,
+	}
+	objectsRouter := router.New(reposByType)
+
+	useCase := keeper.NewService(objectsRouter, metadataRepo)
+	return userRepo, tokenRepo, useCase
 }

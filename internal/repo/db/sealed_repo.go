@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/talx-hub/gophkeeper/internal/model"
 	"github.com/talx-hub/gophkeeper/internal/repo/db/internal/sqlc"
@@ -17,6 +19,15 @@ import (
 
 type SealedRepo struct {
 	DB
+}
+
+func NewObjectRepository(pool *pgxpool.Pool, log *slog.Logger) *SealedRepo {
+	return &SealedRepo{
+		DB{
+			pool: pool,
+			log:  log,
+		},
+	}
 }
 
 func putHelper(ctx context.Context,

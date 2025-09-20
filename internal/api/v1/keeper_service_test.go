@@ -237,11 +237,11 @@ func TestKeeperGRPCService_Delete(t *testing.T) {
 		},
 		{
 			name:   "UseCase delete failed",
-			userID: model.UserID("error"),
+			userID: model.UserID("brake-delete"),
 			request: &keeperpb.DeleteRequest{
 				Metadata: &metadatapb.Metadata{
 					DataType: ptr(metadatapb.Metadata_DATA_TYPE_AUTH),
-					Name:     ptr("error"),
+					Id:       ptr("brake-delete"),
 				},
 			},
 			wantErr:      true,
@@ -346,10 +346,10 @@ func TestKeeperGRPCService_Get(t *testing.T) {
 		},
 		{
 			name:   "UseCase.Get failed",
-			userID: model.UserID("error"),
+			userID: model.UserID("brake-get"),
 			request: &keeperpb.GetRequest{
 				Metadata: &metadatapb.Metadata{
-					Id: ptr(dummyID),
+					Id: ptr("brake-get"),
 				},
 			},
 			wantErr:       true,

@@ -23,6 +23,10 @@ func New(byType map[model.DataType]keeper.ObjectRepo) *StoreRouter {
 }
 
 func (r *StoreRouter) pickByType(dt model.DataType) (keeper.ObjectRepo, error) {
+	if dt == model.DataTypeUnspecified {
+		return nil, errors.New("unknown data type")
+	}
+
 	if s, ok := r.byType[dt]; ok && s != nil {
 		return s, nil
 	}

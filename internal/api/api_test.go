@@ -2,15 +2,24 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const startServerTO = 100 * time.Millisecond
+
+type DummyDBManager struct {
+}
+
+func (m *DummyDBManager) GetPool() (*pgxpool.Pool, error) {
+	return &pgxpool.Pool{}, nil
+}
 
 func TestNewServer(t *testing.T) {
 	tests := []struct {
@@ -22,7 +31,7 @@ func TestNewServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address, nil)
+			s := NewServer(tt.address, &DummyDBManager{}, slog.Default())
 			assert.NotNil(t, s)
 		})
 	}
@@ -42,7 +51,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address, nil)
+			s := NewServer(tt.address, &DummyDBManager{}, slog.Default())
 
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
@@ -82,7 +91,7 @@ func TestServer_Stop(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer("localhost:", nil)
+			s := NewServer("localhost:", &DummyDBManager{}, slog.Default())
 			require.NotNil(t, s)
 
 			wg := &sync.WaitGroup{}
