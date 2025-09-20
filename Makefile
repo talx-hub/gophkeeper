@@ -66,10 +66,7 @@ mocks:
 
 .PHONY : lint
 lint:
-	golangci-lint run -c .golangci.yml > ./golangci-lint/report-unformatted.json
-
-.PHONY : _golangci-lint-format-report
-_golangci-lint-format-report:
+	golangci-lint run -c .golangci.yml
 	cat ./golangci-lint/report-unformatted.json | jq > ./golangci-lint/report.json
 	rm ./golangci-lint/report-unformatted.json
 
