@@ -100,20 +100,20 @@ func (b *repoMockBuilder) WithDelete() *repoMockBuilder {
 }
 
 type sessionMockBuilder struct {
-	service *mocks.MockSessionService
+	service *mocks.MockSessionManager
 }
 
 func newSessionMock(t *testing.T) *sessionMockBuilder {
 	t.Helper()
 
-	s := mocks.NewMockSessionService(t)
+	s := mocks.NewMockSessionManager(t)
 	t.Cleanup(func() {
 		s.AssertExpectations(t)
 	})
 	return &sessionMockBuilder{service: s}
 }
 
-func (s *sessionMockBuilder) Build() *mocks.MockSessionService {
+func (s *sessionMockBuilder) Build() *mocks.MockSessionManager {
 	return s.service
 }
 

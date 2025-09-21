@@ -9,6 +9,9 @@ import (
 	"github.com/talx-hub/gophkeeper/pkg/tokens"
 )
 
+const MDKeyAuthorisation = "authorization"
+const AuthTokenPrefix = "Bearer "
+
 type RefreshTokenStorage interface {
 	Save(ctx context.Context, tokenHash []byte, userID model.UserID, expiresAt time.Time) error
 	Validate(ctx context.Context, tokenHash []byte, userID model.UserID) error

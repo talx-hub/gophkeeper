@@ -44,7 +44,7 @@ func run() error {
 	go func() {
 		log.InfoContext(ctx, "starting gRPC server", "address", cfg.RunAddr)
 		if err := s.Start(); err != nil {
-			log.ErrorContext(ctx, "server", "err", err)
+			log.ErrorContext(ctx, "server failed", "err", err)
 		}
 	}()
 
@@ -53,8 +53,6 @@ func run() error {
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)
-		defer close(sigCh)
-
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 		<-sigCh
@@ -70,7 +68,7 @@ func run() error {
 	log.InfoContext(ctx, "stopping gRPC server gracefully...")
 	err = s.Stop(ctxTO)
 	if err != nil {
-		return fmt.Errorf("gracefull shutdown server: %w", err)
+		return fmt.Errorf("gracefull shutdown server failed: %w", err)
 	}
 
 	log.InfoContext(ctx, "successful server graceful shutdown")

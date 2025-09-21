@@ -17,7 +17,7 @@ import (
 
 const MsgRequestValidationFailed = "request validation failed: check if both Login and Password are filled"
 
-type SessionService interface {
+type SessionManager interface {
 	CreateSession(ctx context.Context, userID model.UserID,
 	) (accessToken string, refreshToken []byte, err error)
 
@@ -38,19 +38,19 @@ type AuthService struct {
 	authpb.UnimplementedAuthServiceServer
 	log            *slog.Logger
 	repo           UserRepository
-	sessionService SessionService
+	sessionManager SessionManager
 	secret         []byte
 }
 
 func NewAuthService(
 	log *slog.Logger,
 	repo UserRepository,
-	session SessionService,
+	sessionManager SessionManager,
 ) *AuthService {
 	return &AuthService{
 		log:            log,
 		repo:           repo,
-		sessionService: session,
+		sessionManager: sessionManager,
 	}
 }
 
@@ -87,7 +87,7 @@ func (s *AuthService) Login(ctx context.Context, r *authpb.LoginRequest,
 		return nil, status.Error(codes.Unauthenticated, "password format is wrong")
 	}
 
-	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
+	access, refresh, err := s.sessionManager.CreateSession(ctx, userID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Error(codes.Internal, "failed to create session")
@@ -115,7 +115,7 @@ func (s *AuthService) Logout(ctx context.Context, r *authpb.LogoutRequest,
 		s.log.ErrorContext(ctx, "request validation failed: the refresh uuid is nil")
 		return nil, status.Errorf(codes.InvalidArgument, "request validation failed")
 	}
-	if err := s.sessionService.RevokeSession(ctx, refreshToken.GetRefreshToken()); err != nil {
+	if err := s.sessionManager.RevokeSession(ctx, refreshToken.GetRefreshToken()); err != nil {
 		s.log.ErrorContext(ctx, "logout failed", model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Internal, "logout failed")
 	}
@@ -169,7 +169,7 @@ func (s *AuthService) Register(ctx context.Context, r *authpb.RegisterRequest,
 		return nil, status.Error(codes.Internal, msgRegistrationFailed)
 	}
 
-	access, refresh, err := s.sessionService.CreateSession(ctx, userID)
+	access, refresh, err := s.sessionManager.CreateSession(ctx, userID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create session", model.KeyLoggerError, err)
 		return nil, status.Errorf(codes.Internal, msgRegistrationFailed)

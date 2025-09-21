@@ -91,7 +91,7 @@ func TestAuthService_Login(t *testing.T) {
 	s := &AuthService{
 		log:            slog.Default(),
 		repo:           mockRepo,
-		sessionService: mockService,
+		sessionManager: mockService,
 		secret:         []byte(dummySecret),
 	}
 
@@ -150,7 +150,7 @@ func TestAuthService_Logout(t *testing.T) {
 	s := &AuthService{
 		log:            slog.Default(),
 		repo:           mockRepo,
-		sessionService: mockService,
+		sessionManager: mockService,
 	}
 
 	for _, tt := range tests {
@@ -250,7 +250,7 @@ func TestAuthService_Register(t *testing.T) {
 	s := &AuthService{
 		log:            slog.Default(),
 		repo:           newRepoMock(t).WithCreate().WithFindByLogin().Build(),
-		sessionService: newSessionMock(t).WithCreateSession().Build(),
+		sessionManager: newSessionMock(t).WithCreateSession().Build(),
 		secret:         []byte(dummySecret),
 	}
 	for _, tt := range tests {
@@ -272,7 +272,7 @@ func TestAuthService_Register(t *testing.T) {
 func TestNewAuthService(t *testing.T) {
 	type args struct {
 		repo    UserRepository
-		session SessionService
+		session SessionManager
 	}
 	tests := []struct {
 		name string
@@ -318,8 +318,8 @@ func TestNewAuthService(t *testing.T) {
 			if !reflect.DeepEqual(svc.repo, tt.args.repo) {
 				t.Errorf("repo mismatch: got %v, want %v", svc.repo, tt.args.repo)
 			}
-			if !reflect.DeepEqual(svc.sessionService, tt.args.session) {
-				t.Errorf("sessionService mismatch: got %v, want %v", svc.sessionService, tt.args.session)
+			if !reflect.DeepEqual(svc.sessionManager, tt.args.session) {
+				t.Errorf("sessionManager mismatch: got %v, want %v", svc.sessionManager, tt.args.session)
 			}
 		})
 	}
