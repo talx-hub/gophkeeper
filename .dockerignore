@@ -1,6 +1,7 @@
 .git
 docs
 golangci-lint
+.env.dev
 **/*.proto
 **/*.test
 *.yaml
