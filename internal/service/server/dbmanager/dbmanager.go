@@ -3,6 +3,7 @@ package dbmanager
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 
@@ -45,7 +46,7 @@ var newMigrator = func(src source.Driver, dsn string) (upCloser, error) {
 func (m *DBManager) ApplyMigrations() (err error) {
 	srcDrv, err := iofs.New(m.migrationsFS, ".")
 	if err != nil {
-		return errors.New("failed to return an iofs driver")
+		return fmt.Errorf("failed to return an iofs driver: %w", err)
 	}
 
 	migrations, err := newMigrator(srcDrv, m.dsn)
@@ -62,7 +63,7 @@ func (m *DBManager) ApplyMigrations() (err error) {
 	}()
 
 	if err = migrations.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return errors.New("failed to apply migrations to the DB")
+		return fmt.Errorf("failed to apply migrations to the DB: %w", err)
 	}
 	return nil
 }
@@ -76,9 +77,13 @@ func (m *DBManager) Close() {
 }
 
 func (m *DBManager) Connect(ctx context.Context) error {
+	if m.dsn == "" {
+		return errors.New("failed to connect: dsn is empty")
+	}
+
 	cfg, err := pgxpool.ParseConfig(m.dsn)
 	if err != nil {
-		return errors.New("failed to parse DSN")
+		return fmt.Errorf("failed to parse DSN: %w", err)
 	}
 	cfg.MinConns = 1
 	cfg.MaxConns = 10
@@ -86,7 +91,7 @@ func (m *DBManager) Connect(ctx context.Context) error {
 
 	m.pool, err = pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
-		return errors.New("failed to parse DSN")
+		return fmt.Errorf("failed to parse DSN: %w", err)
 	}
 
 	return nil
@@ -105,7 +110,7 @@ func (m *DBManager) Ping(ctx context.Context) error {
 	}
 
 	if err := m.pool.Ping(ctx); err != nil {
-		return errors.New("failed to ping the DB")
+		return fmt.Errorf("failed to ping the DB: %w", err)
 	}
 
 	return nil

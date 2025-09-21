@@ -36,20 +36,21 @@ type Server struct {
 	cfg        *config.Config
 	dbManager  DBManager
 	grpcServer *grpc.Server
+	listener   net.Listener
 	log        *slog.Logger
 }
 
 func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger) *Server {
 	return &Server{
-		cfg:        cfg,
-		dbManager:  dbManager,
-		grpcServer: nil,
-		log:        log,
+		cfg:       cfg,
+		dbManager: dbManager,
+		log:       log,
 	}
 }
 
-func (s *Server) Start() error {
-	lis, err := net.Listen("tcp", s.cfg.RunAddr)
+func (s *Server) Setup() error {
+	var err error
+	s.listener, err = net.Listen("tcp", s.cfg.RunAddr)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to start listening on address %s: %w", s.cfg.RunAddr, err)
@@ -62,7 +63,7 @@ func (s *Server) Start() error {
 		return fmt.Errorf("%s: %w", msg, err)
 	}
 
-	userRepo, tokenRepo, keeperRepo := prepareRepos(pool, s.log)
+	userRepo, tokenRepo, keeperRepo := setupRepos(pool, s.log)
 	sessionManager := session.NewManager(
 		tokenRepo,
 		tokens.NewGenerator([]byte(s.cfg.SecretKey)),
@@ -86,8 +87,12 @@ func (s *Server) Start() error {
 	keeperpb.RegisterKeeperServer(s.grpcServer,
 		v1.NewKeeperGRPCService(s.log, keeperRepo))
 
+	return nil
+}
+
+func (s *Server) Serve() error {
 	//nolint:wrapcheck // error could be nil
-	return s.grpcServer.Serve(lis)
+	return s.grpcServer.Serve(s.listener)
 }
 
 func (s *Server) Stop(ctx context.Context) error {
@@ -107,7 +112,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	}
 }
 
-func prepareRepos(pool *pgxpool.Pool, log *slog.Logger) (
+func setupRepos(pool *pgxpool.Pool, log *slog.Logger) (
 	v1.UserRepository,
 	session.RefreshTokenStorage,
 	v1.KeeperUseCase,

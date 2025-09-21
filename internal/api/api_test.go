@@ -60,22 +60,12 @@ func TestServer_Start(t *testing.T) {
 				&config.Config{RunAddr: tt.address},
 				&DummyDBManager{},
 				slog.Default())
-
-			wg := &sync.WaitGroup{}
-			wg.Add(1)
-			time.AfterFunc(startServerTO, func() {
-				defer wg.Done()
-
-				err := s.Stop(context.Background())
-				require.NoError(t, err)
-			})
-			err := s.Start()
+			err := s.Setup()
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}
-			wg.Wait()
 		})
 	}
 }
@@ -105,12 +95,15 @@ func TestServer_Stop(t *testing.T) {
 				slog.Default())
 			require.NotNil(t, s)
 
+			err := s.Setup()
+
+			require.NoError(t, err)
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 
-				err := s.Start()
+				err := s.Serve()
 				require.NoError(t, err)
 			}()
 			time.Sleep(startServerTO)

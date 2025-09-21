@@ -17,12 +17,10 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Println(err)
-	}
+	run()
 }
 
-func run() error {
+func run() {
 	log := slog.Default()
 	cfg := config.NewBuilder(log).
 		FromEnv().
@@ -36,14 +34,20 @@ func run() error {
 	if err != nil {
 		msg := "failed to connect to DB"
 		log.ErrorContext(ctx, msg, model.KeyLoggerError, err)
-		return fmt.Errorf("%s %w", msg, err)
+		return
 	}
 	defer dbManager.Close()
 
 	s := api.NewServer(cfg, dbManager, log)
+	if err = s.Setup(); err != nil {
+		msg := "server setup failed: %w"
+		log.ErrorContext(ctx, msg, model.KeyLoggerError, err)
+		return
+	}
+
 	go func() {
 		log.InfoContext(ctx, "starting gRPC server", "address", cfg.RunAddr)
-		if err := s.Start(); err != nil {
+		if err := s.Serve(); err != nil {
 			log.ErrorContext(ctx, "server failed", "err", err)
 		}
 	}()
@@ -68,11 +72,11 @@ func run() error {
 	log.InfoContext(ctx, "stopping gRPC server gracefully...")
 	err = s.Stop(ctxTO)
 	if err != nil {
-		return fmt.Errorf("gracefull shutdown server failed: %w", err)
+		log.ErrorContext(ctx,
+			"graceful shutdown failed", model.KeyLoggerError, err)
 	}
 
 	log.InfoContext(ctx, "successful server graceful shutdown")
-	return nil
 }
 
 func dbConnect(ctx context.Context, dsn string, log *slog.Logger,

@@ -12,7 +12,7 @@ var raw embed.FS
 var Migrations fs.FS
 
 func init() {
-	sub, err := fs.Sub(raw, "sql/migrations")
+	sub, err := fs.Sub(raw, "migrations")
 	if err != nil {
 		panic(err)
 	}
