@@ -2,6 +2,12 @@
 build: generate
 	go build -o cmd/server/server ./cmd/server
 
+.PHONY : run-server
+run-server: build
+	./cmd/server/server \
+	 -d='postgres://gophkeeper:gophkeeper@localhost:5434/gophkeeper?sslmode=disable' \
+	 -k='super-secret-key'
+
 .PHONY: clean-gen-proto
 clean-gen-proto:
 	find proto -type f ! -name "*.proto" -delete

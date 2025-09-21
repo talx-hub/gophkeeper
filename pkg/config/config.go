@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-	RunAddr     string `env:"RUN_ADDRESS"    envDefault:"localhost:8080"`
+	RunAddr     string `env:"RUN_ADDRESS"    envDefault:"localhost:50051"`
 	DatabaseURI string `env:"DATABASE_URI"   envDefault:""`
 	SecretKey   string `env:"SECRET_KEY"     envDefault:""`
 	LogLevel    string `env:"LOG_LEVEL"      envDefault:"info"`
