@@ -10,35 +10,33 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/api"
 	"github.com/talx-hub/gophkeeper/internal/model"
 	"github.com/talx-hub/gophkeeper/internal/service/server/dbmanager"
+	"github.com/talx-hub/gophkeeper/pkg/config"
 	sqlassets "github.com/talx-hub/gophkeeper/sql"
 )
 
 func main() {
-	if err := run("localhost:9999"); err != nil {
+	if err := run(); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func run(address string) error {
+func run() error {
 	log := slog.Default()
+	cfg := config.NewBuilder(log).
+		FromEnv().
+		FromFlags().
+		GetConfig()
 
-	// TODO: fill dsn from cfg
-	dsn := "db-dsn-dummy"
 	ctx := context.Background()
-	dbManager, err := dbConnect(context.Background(), dsn, log)
+
+	log.InfoContext(ctx, "connecting to DB", "dsn", cfg.DatabaseURI)
+	dbManager, err := dbConnect(ctx, cfg.DatabaseURI, log)
 	if err != nil {
 		msg := "failed to connect to DB"
 		log.ErrorContext(ctx, msg, model.KeyLoggerError, err)
 		return fmt.Errorf("%s %w", msg, err)
 	}
 	defer dbManager.Close()
-
-	s := api.NewServer(address, dbManager, log)
-
-	log.InfoContext(context.Background(),
-		"starting gRPC server",
-		"address", address,
-	)
 
 	g := new(errgroup.Group)
 	g.Go(func() error {
@@ -48,6 +46,7 @@ func run(address string) error {
 				"failed to start server",
 				"err", err)
 			return fmt.Errorf("failed to start server: %w", err)
+	s := api.NewServer(cfg, dbManager, log)
 		}
 		return nil
 	})

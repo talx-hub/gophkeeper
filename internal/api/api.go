@@ -14,6 +14,7 @@ import (
 	"github.com/talx-hub/gophkeeper/internal/repo/db"
 	"github.com/talx-hub/gophkeeper/internal/repo/router"
 	"github.com/talx-hub/gophkeeper/internal/service/server/keeper"
+	"github.com/talx-hub/gophkeeper/pkg/config"
 	"github.com/talx-hub/gophkeeper/pkg/session"
 	"github.com/talx-hub/gophkeeper/pkg/tokens"
 	authpb "github.com/talx-hub/gophkeeper/proto/v1/auth"
@@ -26,27 +27,26 @@ type DBManager interface {
 }
 
 type Server struct {
+	cfg        *config.Config
+	dbManager  DBManager
 	grpcServer *grpc.Server
 	log        *slog.Logger
-	dbManager  DBManager
-	// cfg *server.Builder
-	address string // TODO: fill address from cfg
 }
 
-func NewServer(address string, dbManager DBManager, log *slog.Logger) *Server {
+func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger) *Server {
 	return &Server{
-		address:    address,
-		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
+		cfg:        cfg,
 		dbManager:  dbManager,
+		grpcServer: grpc.NewServer(grpc.ChainUnaryInterceptor()),
 		log:        log,
 	}
 }
 
 func (s *Server) Start() error {
-	lis, err := net.Listen("tcp", s.address)
+	lis, err := net.Listen("tcp", s.cfg.RunAddr)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to start listening on address %s: %w", s.address, err)
+			"failed to start listening on address %s: %w", s.cfg.RunAddr, err)
 	}
 
 	pool, err := s.dbManager.GetPool()
@@ -65,9 +65,12 @@ func (s *Server) Start() error {
 	userRepo, tokenRepo, keeperRepo := prepareRepos(pool, s.log)
 	authpb.RegisterAuthServiceServer(s.grpcServer,
 		v1.NewAuthService(s.log, userRepo,
-			// TODO: fill secret from cfg
-			session.NewManager(tokenRepo, tokens.NewGenerator([]byte("TODO: secret"))),
-		))
+			session.NewManager(
+				tokenRepo,
+				tokens.NewGenerator([]byte(s.cfg.SecretKey)),
+			),
+		),
+	)
 
 	keeperpb.RegisterKeeperServer(s.grpcServer,
 		v1.NewKeeperGRPCService(s.log, keeperRepo))

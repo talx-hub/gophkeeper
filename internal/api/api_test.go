@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/talx-hub/gophkeeper/pkg/config"
 )
 
 const startServerTO = 100 * time.Millisecond
@@ -31,7 +33,10 @@ func TestNewServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address, &DummyDBManager{}, slog.Default())
+			s := NewServer(
+				&config.Config{RunAddr: tt.address},
+				&DummyDBManager{},
+				slog.Default())
 			assert.NotNil(t, s)
 		})
 	}
@@ -51,7 +56,10 @@ func TestServer_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer(tt.address, &DummyDBManager{}, slog.Default())
+			s := NewServer(
+				&config.Config{RunAddr: tt.address},
+				&DummyDBManager{},
+				slog.Default())
 
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
@@ -91,7 +99,10 @@ func TestServer_Stop(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer("localhost:", &DummyDBManager{}, slog.Default())
+			s := NewServer(
+				&config.Config{RunAddr: "localhost:"},
+				&DummyDBManager{},
+				slog.Default())
 			require.NotNil(t, s)
 
 			wg := &sync.WaitGroup{}
