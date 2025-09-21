@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-
-	"golang.org/x/sync/errgroup"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/talx-hub/gophkeeper/internal/api"
 	"github.com/talx-hub/gophkeeper/internal/model"
@@ -38,25 +40,41 @@ func run() error {
 	}
 	defer dbManager.Close()
 
-	g := new(errgroup.Group)
-	g.Go(func() error {
-		err := s.Start()
-		if err != nil {
-			log.ErrorContext(context.Background(),
-				"failed to start server",
-				"err", err)
-			return fmt.Errorf("failed to start server: %w", err)
 	s := api.NewServer(cfg, dbManager, log)
+	go func() {
+		log.InfoContext(ctx, "starting gRPC server", "address", cfg.RunAddr)
+		if err := s.Start(); err != nil {
+			log.ErrorContext(ctx, "server", "err", err)
 		}
-		return nil
-	})
-	if err := g.Wait(); err != nil {
-		return fmt.Errorf("run failed: %w", err)
-	}
-	return nil
+	}()
 
-	// log.InfoContext(context.Background(), "stopping gRPC server gracefully...")
-	// log.InfoContext(context.Background(), "successful server graceful shutdown")
+	idleShutdown := make(chan struct{})
+	defer close(idleShutdown)
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		defer close(sigCh)
+
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+		<-sigCh
+		idleShutdown <- struct{}{}
+	}()
+
+	<-idleShutdown
+
+	const stopTO = time.Second * 5
+	ctxTO, cancel := context.WithTimeout(ctx, stopTO)
+	defer cancel()
+
+	log.InfoContext(ctx, "stopping gRPC server gracefully...")
+	err = s.Stop(ctxTO)
+	if err != nil {
+		return fmt.Errorf("gracefull shutdown server: %w", err)
+	}
+
+	log.InfoContext(ctx, "successful server graceful shutdown")
+	return nil
 }
 
 func dbConnect(ctx context.Context, dsn string, log *slog.Logger,
