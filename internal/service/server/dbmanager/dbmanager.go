@@ -38,7 +38,7 @@ type upCloser interface {
 var newMigrator = func(src source.Driver, dsn string) (upCloser, error) {
 	m, err := migrate.NewWithSourceInstance("iofs", src, dsn)
 	if err != nil {
-		return nil, errors.New("failed to get a new migrate instance")
+		return nil, fmt.Errorf("failed to get a new migrate instance: %w", err)
 	}
 	return m, nil
 }
@@ -50,6 +50,9 @@ func (m *DBManager) ApplyMigrations() (err error) {
 	}
 
 	migrations, err := newMigrator(srcDrv, m.dsn)
+	if err != nil {
+		return fmt.Errorf("failed to start migrate: %w", err)
+	}
 	defer func() {
 		sourceErr, dbErr := migrations.Close()
 		if sourceErr != nil {

@@ -1,4 +1,24 @@
 services:
+  server:
+    build:
+      context: .
+      dockerfile: ./build/dockerfile.server
+    container_name: gophkeeper-server
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      RUN_ADDRESS: ":50051"
+      DATABASE_URI: "postgres://gophkeeper:gophkeeper@database:5432/gophkeeper?sslmode=disable"
+    ports:
+      - "50051:50051"
+    networks:
+      - gophkeeper-network
+    env_file:
+      - ./.env.dev
+    restart: unless-stopped
+
+
   database:
     container_name: gophkeeper-database
     image: postgres:${POSTGRES_TAG}

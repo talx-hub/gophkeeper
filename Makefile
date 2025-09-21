@@ -1,12 +1,10 @@
+.PHONY : run
+run:
+	docker-compose up
+
 .PHONY: build
 build: generate
 	go build -o cmd/server/server ./cmd/server
-
-.PHONY : run-server
-run-server: build
-	./cmd/server/server \
-	 -d='postgres://gophkeeper:gophkeeper@localhost:5434/gophkeeper?sslmode=disable' \
-	 -k='super-secret-key'
 
 .PHONY: clean-gen-proto
 clean-gen-proto:
@@ -110,3 +108,17 @@ migrate-force:
 		-path=/migrations \
 		-database postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable \
 		drop -f
+
+.PHONY : build-server
+build-server:
+	docker build -t gophkeeper-server:dev -f ./build/dockerfile.server .
+
+.PHONY : run-server
+run-server:
+	docker run --rm \
+	-p 50051:50051 \
+	-e RUN_ADDRESS=":50051" \
+	-e DATABASE_URI="postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable" \
+	-e SECRET_KEY="dev-secret" \
+	--network gophkeeper-network \
+	--name gk-server gophkeeper-server:dev
