@@ -1,5 +1,5 @@
 .PHONY : run
-run:
+run: server.crt
 	docker-compose up
 
 .PHONY: build
@@ -122,3 +122,31 @@ run-server:
 	-e SECRET_KEY="dev-secret" \
 	--network gophkeeper-network \
 	--name gk-server gophkeeper-server:dev
+
+certs:
+	mkdir "./certs"
+
+ca.key: certs
+	openssl genrsa -out ./certs/ca.key 4096
+
+ca.crt: ca.key
+	openssl req -x509 -new -nodes -key ./certs/ca.key -sha256 -days 365 \
+	-subj "/CN=MyLocalCA" -out ./certs/ca.crt
+
+server.key: certs
+	openssl genrsa -out ./certs/server.key 2048
+
+server.csr: server.key
+	openssl req -new -key ./certs/server.key -subj "/CN=127.0.0.1" -out ./certs/server.csr
+
+server_san.cnf: certs
+	printf "[SAN]\nsubjectAltName=IP:127.0.0.1,DNS:localhost" > ./certs/server_san.cnf
+
+server.crt: ca.crt server.csr server_san.cnf
+	openssl x509 -req \
+	-in ./certs/server.csr \
+	-CA ./certs/ca.crt -CAkey ./certs/ca.key -CAcreateserial \
+	-out ./certs/server.crt \
+	-days 365 -sha256 \
+	-extfile ./certs/server_san.cnf -extensions SAN
+
