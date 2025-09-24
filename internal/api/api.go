@@ -2,16 +2,21 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
@@ -36,7 +41,6 @@ type Server struct {
 	cfg        *config.Config
 	dbManager  DBManager
 	grpcServer *grpc.Server
-	listener   net.Listener
 	log        *slog.Logger
 }
 
@@ -49,13 +53,6 @@ func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger) *Serve
 }
 
 func (s *Server) Setup() error {
-	var err error
-	s.listener, err = net.Listen("tcp", s.cfg.RunAddr)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to start listening on address %s: %w", s.cfg.RunAddr, err)
-	}
-
 	pool, err := s.dbManager.GetPool()
 	if err != nil {
 		msg := "get pgxpool.Pool"
@@ -70,9 +67,17 @@ func (s *Server) Setup() error {
 	)
 	authInterceptor := NewAuthInterceptor(sessionManager, s.log)
 
-	s.grpcServer = grpc.NewServer(grpc.ChainUnaryInterceptor(
-		authInterceptor.Interceptor(),
-	))
+	creds, err := loadCredentials(s.cfg.CertsDir)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to load TLS credentials: %w", err)
+	}
+	s.log.InfoContext(context.Background(), "TLS credentials successfully loaded")
+	s.grpcServer = grpc.NewServer(
+		grpc.Creds(creds),
+		grpc.ChainUnaryInterceptor(
+			authInterceptor.Interceptor(),
+		))
 	healthpb.RegisterHealthServiceServer(s.grpcServer,
 		v1.NewHealthService(
 			s.log,
@@ -91,8 +96,14 @@ func (s *Server) Setup() error {
 }
 
 func (s *Server) Serve() error {
+	listener, err := net.Listen("tcp", s.cfg.RunAddr)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to start listening on address %s: %w", s.cfg.RunAddr, err)
+	}
+
 	//nolint:wrapcheck // error could be nil
-	return s.grpcServer.Serve(s.listener)
+	return s.grpcServer.Serve(listener)
 }
 
 func (s *Server) Stop(ctx context.Context) error {
@@ -110,6 +121,32 @@ func (s *Server) Stop(ctx context.Context) error {
 	case <-done:
 		return nil
 	}
+}
+
+func loadCredentials(certsDir string) (credentials.TransportCredentials, error) {
+	serverCrtPath := path.Join(certsDir, "server.crt")
+	serverKeyPath := path.Join(certsDir, "server.key")
+	cert, err := tls.LoadX509KeyPair(serverCrtPath, serverKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load X509 Key Pair: %w", err)
+	}
+
+	caCrtPath := path.Join(certsDir, "ca.crt")
+	caPEM, err := os.ReadFile(caCrtPath)
+	if err != nil {
+		return nil, fmt.Errorf("read ca.crt failed: %w", err)
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(caPEM) {
+		return nil, errors.New("append ca failed")
+	}
+
+	tlsCfg := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS13,
+	}
+
+	return credentials.NewTLS(tlsCfg), nil
 }
 
 func setupRepos(pool *pgxpool.Pool, log *slog.Logger) (

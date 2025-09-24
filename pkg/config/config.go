@@ -15,6 +15,7 @@ type Config struct {
 	DatabaseURI string `env:"DATABASE_URI"   envDefault:""`
 	SecretKey   string `env:"SECRET_KEY"     envDefault:""`
 	LogLevel    string `env:"LOG_LEVEL"      envDefault:"info"`
+	CertsDir    string `env:"CERTS_DIR"      envDefault:"/certs"`
 }
 
 type Builder struct {
@@ -29,6 +30,7 @@ func NewBuilder(log *slog.Logger) *Builder {
 			DatabaseURI: "",
 			SecretKey:   "",
 			LogLevel:    "",
+			CertsDir:    "",
 		},
 		log: log,
 	}
@@ -49,6 +51,7 @@ func (b *Builder) FromFlags() *Builder {
 	flag.StringVar(&b.cfg.DatabaseURI, "d", b.cfg.DatabaseURI, "Database URI")
 	flag.StringVar(&b.cfg.SecretKey, "k", b.cfg.SecretKey, "Secret key")
 	flag.StringVar(&b.cfg.LogLevel, "l", b.cfg.LogLevel, "Log level")
+	flag.StringVar(&b.cfg.CertsDir, "c", b.cfg.CertsDir, "Path to certificates directory")
 
 	flag.Parse()
 	return b

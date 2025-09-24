@@ -123,30 +123,46 @@ run-server:
 	--network gophkeeper-network \
 	--name gk-server gophkeeper-server:dev
 
+.PHONY: certs clean
+
 certs:
-	mkdir "./certs"
+	mkdir -p ./certs
+	chmod 700 ./certs
 
-ca.key: certs
-	openssl genrsa -out ./certs/ca.key 4096
+clean:
+	rm -rf ./certs
 
-ca.crt: ca.key
-	openssl req -x509 -new -nodes -key ./certs/ca.key -sha256 -days 365 \
-	-subj "/CN=MyLocalCA" -out ./certs/ca.crt
+./certs/ca.key: certs
+	openssl ecparam -name prime256v1 -genkey -noout -out ./certs/ca.key
+	chmod 600 ./certs/ca.key
 
-server.key: certs
-	openssl genrsa -out ./certs/server.key 2048
+./certs/ca.crt: ./certs/ca.key
+	openssl req -x509 -new -key ./certs/ca.key -days 365 \
+	  -subj "/CN=MyLocalCA" -out ./certs/ca.crt -extensions v3_ca
+	chmod 644 ./certs/ca.crt
 
-server.csr: server.key
+# Server key + CSR
+./certs/server.key: certs
+	openssl ecparam -name prime256v1 -genkey -noout -out ./certs/server.key
+	chmod 600 ./certs/server.key
+
+./certs/server.csr: ./certs/server.key
 	openssl req -new -key ./certs/server.key -subj "/CN=127.0.0.1" -out ./certs/server.csr
 
-server_san.cnf: certs
-	printf "[SAN]\nsubjectAltName=IP:127.0.0.1,DNS:localhost" > ./certs/server_san.cnf
+./certs/server_san.cnf: certs
+	echo "[ v3_req ]" > ./certs/server_san.cnf
+	echo "subjectAltName = @altnames" >> ./certs/server_san.cnf
+	echo "" >> ./certs/server_san.cnf
+	echo "[ altnames ]" >> ./certs/server_san.cnf
+	echo "IP.1 = 127.0.0.1" >> ./certs/server_san.cnf
+	echo "DNS.1 = localhost" >> ./certs/server_san.cnf
 
-server.crt: ca.crt server.csr server_san.cnf
+./certs/server.crt: clean ./certs/ca.crt ./certs/server.csr ./certs/server_san.cnf
 	openssl x509 -req \
 	-in ./certs/server.csr \
 	-CA ./certs/ca.crt -CAkey ./certs/ca.key -CAcreateserial \
 	-out ./certs/server.crt \
-	-days 365 -sha256 \
-	-extfile ./certs/server_san.cnf -extensions SAN
+	-days 365 \
+	-extfile ./certs/server_san.cnf -extensions v3_req
+	chmod 644 ./certs/server.crt
 

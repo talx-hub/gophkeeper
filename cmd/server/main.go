@@ -74,6 +74,7 @@ func run() {
 	if err != nil {
 		log.ErrorContext(ctx,
 			"graceful shutdown failed", model.KeyLoggerError, err)
+		return
 	}
 
 	log.InfoContext(ctx, "successful server graceful shutdown")

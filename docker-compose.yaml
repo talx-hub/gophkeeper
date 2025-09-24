@@ -10,6 +10,8 @@ services:
     environment:
       RUN_ADDRESS: ":50051"
       DATABASE_URI: "postgres://gophkeeper:gophkeeper@database:5432/gophkeeper?sslmode=disable"
+    volumes:
+      - "./certs:/certs:ro"
     ports:
       - "50051:50051"
     networks:
