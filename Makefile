@@ -75,7 +75,9 @@ lint:
 	rm ./golangci-lint/report-unformatted.json
 
 .PHONY : test
-test:
+test: ./certs/server.crt
+	mkdir -p "./internal/api/certs-fixtures"
+	cp ./certs/server.crt ./certs/server.key ./internal/api/certs-fixtures
 	go test ./... -tags integration_tests -race -coverprofile=cover.out -covermode=atomic
 	grep -v \
 		-e "/mocks/" \

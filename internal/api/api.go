@@ -3,12 +3,10 @@ package api
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
-	"os"
 	"path"
 	"strings"
 
@@ -44,7 +42,8 @@ type Server struct {
 	log        *slog.Logger
 }
 
-func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger) *Server {
+func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger,
+) *Server {
 	return &Server{
 		cfg:       cfg,
 		dbManager: dbManager,
@@ -55,16 +54,13 @@ func NewServer(cfg *config.Config, dbManager DBManager, log *slog.Logger) *Serve
 func (s *Server) Setup() error {
 	pool, err := s.dbManager.GetPool()
 	if err != nil {
-		msg := "get pgxpool.Pool"
-		s.log.ErrorContext(context.Background(), msg, model.KeyLoggerError, err)
-		return fmt.Errorf("%s: %w", msg, err)
+		return fmt.Errorf("get pgxpool.Pool: %w", err)
 	}
 
 	userRepo, tokenRepo, keeperRepo := setupRepos(pool, s.log)
 	sessionManager := session.NewManager(
 		tokenRepo,
-		tokens.NewGenerator([]byte(s.cfg.SecretKey)),
-	)
+		tokens.NewGenerator([]byte(s.cfg.SecretKey)))
 	authInterceptor := NewAuthInterceptor(sessionManager, s.log)
 
 	creds, err := loadCredentials(s.cfg.CertsDir)
@@ -72,7 +68,8 @@ func (s *Server) Setup() error {
 		return fmt.Errorf(
 			"failed to load TLS credentials: %w", err)
 	}
-	s.log.InfoContext(context.Background(), "TLS credentials successfully loaded")
+	s.log.InfoContext(context.Background(),
+		"TLS credentials successfully loaded")
 	s.grpcServer = grpc.NewServer(
 		grpc.Creds(creds),
 		grpc.ChainUnaryInterceptor(
@@ -131,16 +128,6 @@ func loadCredentials(certsDir string) (credentials.TransportCredentials, error) 
 		return nil, fmt.Errorf("failed to load X509 Key Pair: %w", err)
 	}
 
-	caCrtPath := path.Join(certsDir, "ca.crt")
-	caPEM, err := os.ReadFile(caCrtPath)
-	if err != nil {
-		return nil, fmt.Errorf("read ca.crt failed: %w", err)
-	}
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(caPEM) {
-		return nil, errors.New("append ca failed")
-	}
-
 	tlsCfg := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		MinVersion:   tls.VersionTLS13,
@@ -176,7 +163,8 @@ type AuthInterceptor struct {
 	sessionManager v1.SessionManager
 }
 
-func NewAuthInterceptor(manager v1.SessionManager, log *slog.Logger) *AuthInterceptor {
+func NewAuthInterceptor(manager v1.SessionManager, log *slog.Logger,
+) *AuthInterceptor {
 	return &AuthInterceptor{
 		log:            log,
 		sessionManager: manager,
@@ -193,11 +181,13 @@ func (i *AuthInterceptor) Interceptor() grpc.UnaryServerInterceptor {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			i.log.ErrorContext(ctx, "metadata not found in context")
-			return nil, status.Error(codes.Unauthenticated, "authentication error")
+			return nil, status.Error(
+				codes.Unauthenticated, "authentication error")
 		}
 
 		accessTokens := md.Get(session.MDKeyAuthorisation)
-		accessToken := strings.TrimPrefix(accessTokens[0], session.AuthTokenPrefix)
+		accessToken := strings.TrimPrefix(
+			accessTokens[0], session.AuthTokenPrefix)
 
 		userID, err := i.sessionManager.ValidateAccessToken(
 			context.Background(), accessToken)
@@ -208,7 +198,8 @@ func (i *AuthInterceptor) Interceptor() grpc.UnaryServerInterceptor {
 					model.KeyLoggerError, err,
 				)
 			}
-			return nil, status.Error(codes.Unauthenticated, "authentication error")
+			return nil, status.Error(
+				codes.Unauthenticated, "authentication error")
 		}
 
 		userCtx := context.WithValue(ctx, model.ContextKeyUserID, userID)

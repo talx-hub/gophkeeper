@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"testing"
@@ -15,12 +16,20 @@ import (
 )
 
 const startServerTO = 100 * time.Millisecond
+const certsFixturesDir = "./certs-fixtures"
 
 type DummyDBManager struct {
 }
 
 func (m *DummyDBManager) GetPool() (*pgxpool.Pool, error) {
 	return &pgxpool.Pool{}, nil
+}
+
+type BrokenDBManager struct {
+}
+
+func (m *BrokenDBManager) GetPool() (*pgxpool.Pool, error) {
+	return nil, errors.New("expected error")
 }
 
 func TestNewServer(t *testing.T) {
@@ -34,7 +43,7 @@ func TestNewServer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewServer(
-				&config.Config{RunAddr: tt.address},
+				&config.Config{RunAddr: tt.address, CertsDir: certsFixturesDir},
 				&DummyDBManager{},
 				slog.Default())
 			assert.NotNil(t, s)
@@ -42,24 +51,28 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
-func TestServer_Start(t *testing.T) {
+func TestServer_Setup(t *testing.T) {
 	tests := []struct {
 		name    string
-		address string
 		wantErr bool
 	}{
-		{"valid address", "localhost:", false},
-		{"invalid: wrong IP", "1:", true},
-		{"invalid: no Port #1", "localhost", true},
-		{"invalid: wrong Port #1", "localhost:WRONG", true},
-		{"invalid: wrong Port #2", "localhost:99999", true},
+		{"init pool fail", true},
+		{"load credentials fail", true},
+		{"ok", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewServer(
-				&config.Config{RunAddr: tt.address},
+				&config.Config{RunAddr: "::"},
 				&DummyDBManager{},
 				slog.Default())
+			if tt.name == "init pool fail" {
+				s.dbManager = &BrokenDBManager{}
+			}
+			if tt.name == "ok" {
+				s.dbManager = &DummyDBManager{}
+				s.cfg.CertsDir = certsFixturesDir
+			}
 			err := s.Setup()
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -68,6 +81,41 @@ func TestServer_Start(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServer_Serve(t *testing.T) {
+	tests := []struct {
+		name    string
+		address string
+		wantErr bool
+	}{
+		{"invalid: wrong IP", "w.r.o.ng", true},
+		{"invalid: no Port #1", "localhost", true},
+		{"invalid: wrong Port #1", "localhost:WRONG", true},
+		{"invalid: wrong Port #2", "localhost:99999", true},
+		{"valid address", "localhost:", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewServer(
+				&config.Config{RunAddr: tt.address, CertsDir: certsFixturesDir},
+				&DummyDBManager{},
+				slog.Default())
+			err := s.Setup()
+			require.NoError(t, err)
+
+			time.AfterFunc(startServerTO, func() {
+				_ = s.Stop(context.Background())
+			})
+			err = s.Serve()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+
 }
 
 func TestServer_Stop(t *testing.T) {
@@ -90,7 +138,7 @@ func TestServer_Stop(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewServer(
-				&config.Config{RunAddr: "localhost:"},
+				&config.Config{RunAddr: "localhost:", CertsDir: certsFixturesDir},
 				&DummyDBManager{},
 				slog.Default())
 			require.NotNil(t, s)
