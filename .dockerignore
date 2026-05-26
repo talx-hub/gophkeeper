@@ -1,0 +1,10 @@
+.git
+docs
+golangci-lint
+.env.dev
+**/*.proto
+**/*.test
+*.yaml
+*.md
+cover*
+Makefile

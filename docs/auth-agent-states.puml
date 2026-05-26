@@ -1,0 +1,42 @@
+@startuml
+title
+<b>GophKeeper v2025.08.08</b>
+<i>Состояния Session Manager на клиенте</i>
+end title
+
+[*] --> NoTokens : Старт / нет сохранённых токенов
+
+state NoTokens {
+}
+
+NoTokens --> ActiveSession : Login успешен
+ActiveSession --> NoTokens : Logout / refresh invalid
+
+state ActiveSession {
+
+    ActiveSession --> AccessExpired : TTL access истёк
+}
+
+state AccessExpired {
+
+    AccessExpired --> ActiveSession : Refresh успешен
+    AccessExpired --> NoTokens : Refresh просрочен/отозван
+}
+
+    note right of NoTokens
+        Нет access в RAM и
+        нет refresh в Local Cache.
+        Любая команда → запрос login.
+    end note
+
+    note right of ActiveSession
+        Access токен в RAM
+        Refresh токен в Local Cache (зашифрован).
+    end note
+
+    note right of AccessExpired
+        Access токен больше невалиден,
+        но refresh в Local Cache ещё жив.
+        Любая команда → попытка refresh.
+    end note
+@enduml

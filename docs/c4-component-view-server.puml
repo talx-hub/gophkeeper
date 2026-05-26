@@ -1,0 +1,43 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+title
+  <b>GophKeeper v2025.08.14</b>
+  <i>Компонентная диаграмма: Backend Core (новая архитектура)</i>
+end title
+
+' ==== Компоненты ядра ====
+Container_Boundary(backend_core, "Backend Core"){
+  Component(api_gateway, "gRPC API Gateway", "Go + gRPC", "Принимает запросы от клиентов и перенаправляет их в соответствующие сервисы")
+  Component(chunker, "Chunk Read-Writer", "Go", "Принимает от gRPC сервиса куски данных и собирает из них цельные объекты, если требуется, для передачи в хранилище")
+  Container_Boundary(auth_boundary, "Auth Service"){
+    Component(auth_handler, "Auth Handler", "Go", "Обрабатывает регистрацию, аутентификацию и refresh токенов")
+    Component(session_manager, "Session Manager", "Go", "Генерирует access/refresh токены, проверяет их валидность")
+    Component(auth_repo, "User Repository", "Go + PostgreSQL", "Чтение/запись пользователей и refresh токенов")
+  }
+
+  Component(data_service, "Data Storage Service", "Go", "CRUD данных и метаданных, работа с файлами")
+}
+
+' ==== Внешние системы ====
+ContainerDb(pg_db, "PostgreSQL", "SQL", "Хранит пользователей, refresh токены, метаданные")
+ContainerDb(s3_store, "S3 Storage", "S3-compatible", "Хранит зашифрованные данные")
+
+' ==== Взаимодействия ====
+Rel(api_gateway, auth_handler, "Регистрация, вход, refresh", "gRPC")
+Rel(api_gateway, chunker, "чтение/запись бинарных данных")
+Rel(api_gateway, data_service, "CRUD метаданных")
+
+Rel(chunker, data_service, "CRUD данных", "gRPC")
+
+Rel(auth_handler, auth_repo, "Чтение/запись пользователей и refresh токенов", "SQL")
+Rel(auth_handler, session_manager, "Генерация/проверка токенов")
+Rel(auth_repo, pg_db, "SQL")
+
+Rel(data_service, pg_db, "Чтение/запись/очистка данных и метаданных", "SQL")
+Rel(data_service, s3_store, "Чтение/запись/удаление зашифрованных файлов", "S3 API")
+
+@enduml

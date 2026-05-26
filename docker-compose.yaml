@@ -1,0 +1,53 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./build/dockerfile.server
+    container_name: gophkeeper-server
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      RUN_ADDRESS: ":50051"
+      DATABASE_URI: "postgres://gophkeeper:gophkeeper@database:5432/gophkeeper?sslmode=disable"
+    volumes:
+      - "./certs:/certs:ro"
+    ports:
+      - "50051:50051"
+    networks:
+      - gophkeeper-network
+    env_file:
+      - ./.env.dev
+    restart: unless-stopped
+
+
+  database:
+    container_name: gophkeeper-database
+    image: postgres:${POSTGRES_TAG}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gophkeeper -d gophkeeper"]
+      interval: 5s
+      retries: 3
+      timeout: 5s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "P@ssw0rd"
+      POSTGRES_DB: postgres
+      POSTGRES_DATA: "/var/lib/postgresql/data"
+    volumes:
+      - "./sql/init:/docker-entrypoint-initdb.d"
+      - "gophkeeper-volume:/var/lib/postgresql/data"
+    ports:
+      - "5434:5432"
+    networks:
+      - gophkeeper-network
+    restart: always
+
+volumes:
+  gophkeeper-volume:
+    name: gophkeeper-volume
+
+networks:
+  gophkeeper-network:
+    driver: bridge
+    name: gophkeeper-network

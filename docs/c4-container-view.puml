@@ -1,0 +1,49 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+skinparam wrapWidth 300
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+title
+  <b>GophKeeper v2025.08.07</b>
+  <i>Контейнерная диаграмма</i>
+end title
+
+Person(user, "Пользователь", "Владелец CLI-агента")
+System_Ext(cli_ui, "CLI", "Командный интерфейс для пользователя")
+
+' ===== CLI-Агент =====
+System_Boundary(cli_agent, "CLI-Агент (Go-приложение)") {
+    Container(agent_core, "Agent Core", "Go", "Основная бизнес-логика: управление данными, синхронизация, шифрование")
+    ContainerDb(local_cache, "Local Cache", "ФС или SQLite", "Метаданные, зашифрованные данные, токены")
+}
+
+' ===== Удалённый сервер =====
+System_Boundary(server, "Удалённый сервер (Go-приложение)") {
+    Container(backend_core, "Backend Core", "Go + gRPC server", "gRPC API и обработка команд агентов")
+    Container(auth_service, "Auth Service", "Go", "Регистрация, логин, выдача токенов")
+    ContainerDb(pg_db, "PostgreSQL", "БД", "Хранение метаданных и данных пользователей")
+    ContainerDb(s3, "S3-compatible Storage", "S3 API", "Хранение зашифрованных бинарных данных")
+}
+
+Rel(user, cli_ui, "Вводит команды")
+
+Rel_D(cli_ui, agent_core, "Передаёт команды")
+Rel(agent_core, local_cache, "Чтение/запись метаданных, токенов, данных")
+
+Rel_R(agent_core, backend_core, "Синхронизация данных", "gRPC over TLS")
+
+Rel(backend_core, pg_db, "Чтение/запись метаданных", "SQL")
+Rel(backend_core, s3, "Чтение/запись зашифрованных данных", "S3 API")
+Rel(auth_service, pg_db, "Хранение данных пользователей", "SQL")
+Rel_R(backend_core, auth_service, "Регистрация / логин / refresh", "gRPC over TLS")
+
+Note right of agent_core
+  Мастер-ключ создаётся при регистрации
+  и хранится у пользователя.
+  Используется только для шифрования/дешифрования.
+  Не передаётся на сервер.
+end note
+
+@enduml

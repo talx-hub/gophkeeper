@@ -1,0 +1,38 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+skinparam wrapWidth 300
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+title
+  <b>GophKeeper v2025.08.07</b>
+  <i>Контекстная диаграмма: CLI Zero-Knowledge менеджер паролей</i>
+end title
+
+' Пользователь
+Person(user, "Пользователь", "Владелец и оператор CLI-клиента")
+
+' Хранилище мастер-ключа
+System_Ext(master_key, "Мастер-ключ", "Генерируется пользователем.\n Хранится на бумажке и в ОЗУ.")
+
+' Интернет — небезопасная среда
+System_Ext(internet, "Интернет", "Ненадёжная сеть передачи данных")
+
+' Система
+System(agent1, "CLI-агент (Linux/MacOS/Windows)", "Go-приложение: шифрует, дешифрует, синхронизирует данные")
+System(agent2, "CLI-агент (Linux/MacOS/Windows)", "Go-приложение: шифрует, дешифрует, синхронизирует данные")
+System(remote_backend, "Удалённый сервер", "Go-сервис: хранит зашифрованные данные, не имеет доступа к ключам")
+
+Rel(user, agent1, "Регистрируется, логинится, запрашивает синхронизацию\n\nУправляет данными:\nдобавляет,\nполучает список метаданных, запрашивает по ID,\nудаляет по ID", "CLI")
+Rel(user, agent2, "Регистрируется, логинится, запрашивает синхронизацию\n\nУправляет данными:\nдобавляет,\nполучает список метаданных, запрашивает по ID,\nудаляет по ID", "CLI")
+
+Rel(user, master_key, "Генерирует,\nхранит")
+Rel(agent1, master_key, "Использует", "Локально")
+Rel(agent2, master_key, "Использует", "Локально")
+
+Rel(agent1, internet, "Передаёт зашифрованные данные", "gRPC over TLS")
+Rel(agent2, internet, "Передаёт зашифрованные данные", "gRPC over TLS")
+Rel(internet, remote_backend, "Доставляет данные", "gRPC over TLS")
+
+@enduml

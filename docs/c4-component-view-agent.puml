@@ -1,0 +1,39 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+title
+  <b>GophKeeper v2025.08.07</b>
+  <i>Компонентная диаграмма: Agent Core (CLI)</i>
+end title
+
+Container_Boundary(agent_core, "Agent Core", "Go", "Обрабатывает команды и координирует логику приложения") {
+
+Component(dispatcher, "Command Core", "Go", "Обрабатывает команды от CLI-интерфейса и направляет их соответствующим компонентам")
+Component(session, "Session Manager", "Go", "Управляет токенами (access/refresh), сохраняет и обновляет их")
+Component(sync, "gRPC Client", "Go + gRPC", "Связывается с сервером для аутентификации пользователя, синхронизации данных, использует access-токен")
+Component(vault, "Vault Service", "Go", "Работает с метаданными и зашифрованными данными")
+Component(crypto, "Crypto Engine", "Go", "Шифрует/дешифрует данные с использованием мастер-ключа")
+}
+
+' CLI и хранилище — внешние по отношению к ядру
+Container_Ext(cli, "CLI", "", "Интерфейс командной строки")
+ContainerDb(localstore, "Local Storage", "ФС / SQLite", "Хранение токенов, данных и метаданных")
+
+' Взаимодействия
+Rel_L(cli, dispatcher, "Передает команды пользователя")
+Rel(dispatcher, crypto, "Просит зашифровать/дешифровать")
+Rel(dispatcher, vault, "Читает закешированные данные")
+Rel(dispatcher, sync, "register/login/refresh/logout,\nadd/get/list/delete/sync")
+
+Rel(session, localstore, "Читает/пишет токены", "зашифрованные")
+
+Rel(vault, localstore, "Читает/пишет данные и метаданные")
+
+Rel(sync, localstore, "Чтение/запись зашифрованных данных")
+Rel(sync, session, "Передает токены")
+Rel(sync, vault, "Работает с данными при синхронизации")
+
+@enduml

@@ -1,0 +1,31 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/internal/model/agent";
+package gophkeeper.v1.agent;
+
+import "proto/v1/metadata/metadata.proto";
+import "proto/v1/common/common.proto";
+
+// Основной объект данных, используемый и шифруемый агентом.
+// Каждое сообщение содержит метаданные и один из возможных типов данных.
+message UnencryptedData {
+  gophkeeper.v1.metadata.Metadata metadata      = 1;
+  oneof type {
+    AuthData auth_data                          = 2; // данные сайтов и сервисов
+    CardInfo card_info                          = 3; // данные банковских карт
+    gophkeeper.v1.common.Payload payload        = 4; // часть бинарного файла
+  };
+}
+
+// Данные сайтов или сервисов: логин и пароль.
+message AuthData {
+  string username = 1;
+  string password = 2;
+}
+
+// Информация по банковской карте: номер, дата выпуска, имя и фамилия владельца.
+message CardInfo {
+  string card_number = 1;
+  string expiry = 2;
+  string owner = 3;
+}

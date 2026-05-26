@@ -1,0 +1,19 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/health;healthpb";
+package gophkeeper.v1.health;
+
+import "google/protobuf/empty.proto";
+
+// HealthService предоставляет простой метод для проверки доступности сервиса.
+//
+// Метод Ping используется для проверки живости (liveness) и отзывчивости (readiness).
+// Возвращает пустой ответ при успешном соединении.
+//
+// Ошибки передаются через статус-коды gRPC (например, UNAVAILABLE),
+// а таймауты и отмены — через context.Context вызова.
+service HealthService {
+  // Проверка живости сервиса.
+  // При успешном ответе сервис работает и доступен.
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

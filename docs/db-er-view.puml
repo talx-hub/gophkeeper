@@ -1,0 +1,60 @@
+@startuml
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+
+entity "users" as users {
+  * id : UUID <<PK>>
+  --
+  login_hash   : BYTEA <<UNIQUE>>
+  password_hash: BYTEA
+}
+
+entity "refresh_tokens" as refresh_tokens {
+  * id       : INT <<PK>>
+  --
+  user_id    : UUID <<FK>>
+  token_hash : BYTEA
+  expires_at : timestamptz
+  created_at : timestamptz
+}
+
+entity "data_types" as data_types {
+  * id   : INT <<PK>>
+  --
+  name : VARCHAR(36)
+}
+
+entity "objects" as objects {
+  * id        : UUID <<PK>>
+  --
+  user_id     : UUID <<FK>>
+  data_type   : INT  <<FK>>
+  name        : TEXT
+  description : TEXT
+  created_at  : timestamptz
+}
+
+' составной PK: (objects_id, index)
+entity "file_chunks" as file_chunks {
+  * objects_id : UUID <<PK, FK>>
+  * index      : INT  <<PK>>
+  --
+  length       : INT
+  storage_key  : TEXT
+}
+
+entity "secret_blobs" as secret_blobs {
+  * id         : INT <<PK>>
+  --
+  objects_id : UUID <<FK>>
+  sealed     : BYTEA
+}
+
+' -------- relationships --------
+users       ||--o{ refresh_tokens : "has many"
+users       ||--o{ objects        : "owns many"
+data_types  ||--o{ objects        : "type of"
+objects     ||--o{ file_chunks    : "has many"
+objects     ||--o{ secret_blobs   : "has many"
+
+@enduml

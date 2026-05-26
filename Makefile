@@ -1,0 +1,156 @@
+.PHONY : run
+run: ./certs/server.crt
+	docker-compose up
+
+.PHONY: build
+build: generate
+	go build -o cmd/server/server ./cmd/server
+
+.PHONY: clean-gen-proto
+clean-gen-proto:
+	find proto -type f ! -name "*.proto" -delete
+
+.PHONY: generate
+generate: auth.proto health.proto keeper.proto agent.proto
+
+.PHONY: auth.proto
+auth.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=. \
+		--go-grpc_opt=paths=source_relative \
+		proto/v1/auth/auth.proto
+
+.PHONY: health.proto
+health.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=. \
+		--go-grpc_opt=paths=source_relative \
+		proto/v1/health/health.proto
+
+.PHONY: metadata.proto
+metadata.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/metadata/metadata.proto
+
+.PHONY: common.proto
+common.proto:
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/common/common.proto
+
+.PHONY: keeper.proto
+keeper.proto: metadata.proto common.proto
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=. \
+		--go-grpc_opt=paths=source_relative \
+		proto/v1/keeper/keeper.proto
+
+.PHONY: auth.proto
+agent.proto: metadata.proto common.proto
+	protoc \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		proto/v1/agent/agent.proto
+
+.PHONY: mocks
+mocks:
+	docker run --rm \
+		-v $(realpath .):/src \
+		-w /src \
+		vektra/mockery:latest
+
+.PHONY : lint
+lint:
+	golangci-lint run -c .golangci.yml
+	cat ./golangci-lint/report-unformatted.json | jq > ./golangci-lint/report.json
+	rm ./golangci-lint/report-unformatted.json
+
+.PHONY : test
+test: ./certs/server.crt
+	mkdir -p "./internal/api/certs-fixtures"
+	cp ./certs/server.crt ./certs/server.key ./internal/api/certs-fixtures
+	go test ./... -tags integration_tests -race -coverprofile=cover.out -covermode=atomic
+	grep -v \
+		-e "/mocks/" \
+		-e "/proto/" \
+		cover.out > cover.filtered.out
+
+.PHONY : check-coverage
+check-coverage:
+	go tool cover -html cover.filtered.out
+
+sqlc:
+	sqlc generate
+
+.PHONY: migrate
+migrate:
+	docker run --rm \
+		-v $(realpath ./sql/migrations):/migrations \
+		--network=gophkeeper-network \
+		migrate/migrate:v4.18.3 \
+			-path=/migrations \
+			-database postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable \
+			up
+
+.PHONY: migrate-force
+migrate-force:
+	docker run --rm \
+	-v $(realpath ./sql/migrations):/migrations \
+	--network=gophkeeper-network \
+	migrate/migrate:v4.18.3 \
+		-path=/migrations \
+		-database postgres://gophkeeper:gophkeeper@gophkeeper-database:5432/gophkeeper?sslmode=disable \
+		drop -f
+
+.PHONY: certs clean
+
+certs:
+	mkdir -p ./certs
+	chmod 700 ./certs
+
+clean:
+	rm -rf ./certs
+
+./certs/ca.key: certs
+	openssl ecparam -name prime256v1 -genkey -noout -out ./certs/ca.key
+	chmod 600 ./certs/ca.key
+
+./certs/ca.crt: ./certs/ca.key
+	openssl req -x509 -new -key ./certs/ca.key -days 365 \
+	  -subj "/CN=MyLocalCA" -out ./certs/ca.crt -extensions v3_ca
+	chmod 644 ./certs/ca.crt
+
+# Server key + CSR
+./certs/server.key: certs
+	openssl ecparam -name prime256v1 -genkey -noout -out ./certs/server.key
+	chmod 600 ./certs/server.key
+
+./certs/server.csr: ./certs/server.key
+	openssl req -new -key ./certs/server.key -subj "/CN=127.0.0.1" -out ./certs/server.csr
+
+./certs/server_san.cnf: certs
+	echo "[ v3_req ]" > ./certs/server_san.cnf
+	echo "subjectAltName = @altnames" >> ./certs/server_san.cnf
+	echo "" >> ./certs/server_san.cnf
+	echo "[ altnames ]" >> ./certs/server_san.cnf
+	echo "IP.1 = 127.0.0.1" >> ./certs/server_san.cnf
+	echo "DNS.1 = localhost" >> ./certs/server_san.cnf
+
+./certs/server.crt: clean ./certs/ca.crt ./certs/server.csr ./certs/server_san.cnf
+	openssl x509 -req \
+	-in ./certs/server.csr \
+	-CA ./certs/ca.crt -CAkey ./certs/ca.key -CAcreateserial \
+	-out ./certs/server.crt \
+	-days 365 \
+	-extfile ./certs/server_san.cnf -extensions v3_req
+	chmod 644 ./certs/server.crt
+

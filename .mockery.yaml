@@ -1,0 +1,20 @@
+template: testify
+recursive: true
+dir: '{{.InterfaceDir}}/mocks'
+filename: 'mock_{{.InterfaceName}}.go'
+structname: "Mock{{.InterfaceName}}"
+pkgname: mocks
+packages:
+  github.com/talx-hub/gophkeeper/internal/api/v1:
+    interfaces:
+      UserRepository:
+      SessionManager:
+      KeeperUseCase:
+  github.com/talx-hub/gophkeeper/internal/service/server/keeper:
+    interfaces:
+      ObjectRepo:
+      MetadataRepo:
+  github.com/talx-hub/gophkeeper/pkg/session:
+    interfaces:
+      RefreshTokenStorage:
+

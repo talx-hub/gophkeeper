@@ -1,0 +1,98 @@
+edition = "2023";
+
+option go_package = "github.com/talx-hub/gophkeeper/internal/api/v1/keeper;keeperpb";
+package gophkeeper.v1.keeper;
+
+import "proto/v1/metadata/metadata.proto";
+import "proto/v1/common/common.proto";
+
+// ====================================
+// ===       Описание сервиса       ===
+// ====================================
+
+// Keeper — сервис для управления и синхронизации данных пользователя,
+// включая данные для входа в различные сервисы, информацию по картам и бинарные файлы.
+service Keeper {
+  // Sync — потоковый RPC для синхронизации данных между клиентом и сервером.
+  // Сервер отправляет поток сообщений SyncResponse, каждое из которых содержит один объект Data.
+  rpc Sync(SyncRequest)       returns (stream SyncResponse);
+
+  // Add — добавляет новый объект данных. Возвращает идентификатор (единственное заполненное поле в объекте metadata).
+  rpc Add(stream AddRequest)  returns (AddResponse);
+
+  // List — возвращает список метаданных доступных данных пользователя.
+  rpc List(ListRequest)       returns (ListResponse);
+
+  // Get — получает полный объект данных по заданным метаданным.
+  rpc Get(GetRequest)         returns (stream GetResponse);
+
+  // Delete — удаляет объект данных, идентифицированный метаданными.
+  // Возвращает пустой ответ при успехе.
+  rpc Delete(DeleteRequest)   returns (DeleteResponse);
+}
+
+// ====================================
+// ===  Сообщения верхнего уровня  ===
+// ====================================
+
+// Запрос на синхронизацию данных.
+// sync_mode определяет режим синхронизации:
+// - SYNC_MODE_UNSPECIFIED: режим не выбран (по умолчанию).
+// - SYNC_MODE_SHORT: синхронизация без бинарных данных.
+// - SYNC_MODE_FULL: полная синхронизация всех данных, включая бинарные.
+message SyncRequest {
+  enum SyncMode {
+    SYNC_MODE_UNSPECIFIED = 0;
+    SYNC_MODE_SHORT = 1;  // без бинарных данных
+    SYNC_MODE_FULL = 2;   // полная синхронизация с бинарными данными
+  }
+  SyncMode sync_mode = 1;
+}
+
+// Ответ при синхронизации: содержит один объект Data.
+// Поток сообщений SyncResponse позволяет серверу поэтапно
+// отправлять данные клиенту.
+message SyncResponse {
+  gophkeeper.v1.metadata.Metadata metadata  = 1;
+  gophkeeper.v1.common.Payload    payload   = 2;
+}
+
+// Запрос на добавление нового объекта данных.
+message AddRequest {
+  gophkeeper.v1.metadata.Metadata metadata  = 1;
+  gophkeeper.v1.common.Payload    payload   = 2;
+}
+
+// Ответ сервера на запрос добавления объекта данных.
+message AddResponse{
+  gophkeeper.v1.metadata.Metadata metadata = 1;
+}
+
+// Запрос получения объекта данных по метаданным.
+message GetRequest {
+  gophkeeper.v1.metadata.Metadata metadata  = 1;
+}
+
+// Ответ на запрос Get: возвращает полный объект данных.
+message GetResponse {
+  gophkeeper.v1.metadata.Metadata metadata  = 1;
+  gophkeeper.v1.common.Payload    payload   = 2;
+}
+
+// Запрос на удаление объекта данных по метаданным.
+message DeleteRequest {
+  gophkeeper.v1.metadata.Metadata metadata  = 1;
+}
+
+// Ответ сервера на запрос удаления объекта данных.
+message DeleteResponse {
+}
+
+// Запрос на получение списка объектов.
+message ListRequest {
+}
+
+// Ответ на запрос списка: список метаданных объектов, сохранённых в хранилище.
+message ListResponse {
+  repeated gophkeeper.v1.metadata.Metadata metadata = 1;
+}
